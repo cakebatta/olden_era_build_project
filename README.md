@@ -1,10 +1,10 @@
 # Heroes of Might & Magic: Olden Era Build Planner
 
-A deterministic planning and analysis tool for **Heroes of Might & Magic: Olden Era** focused on tournament play.
+A planning and analysis tool for **Heroes of Might & Magic: Olden Era** focused on pvp (though I guess you could also use this to sweat regular matches against ai).
 
 The project parses the game's data files to build an internal model of cities, buildings, units, dependencies, construction timing, and resource costs. It is designed to answer strategic planning questions such as:
 
-- What is the fastest legal path to a particular building?
+- What is the fastest path to a particular building?
 - What are all valid build orders?
 - How much does each path cost?
 - When can a build be completed?
