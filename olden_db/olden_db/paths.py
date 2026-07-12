@@ -13,6 +13,10 @@ CITY_DIR = CORE_DIR / "DB" / "objects_logic" / "cities"
 UNIT_LOGIC_DIR = CORE_DIR / "DB" / "units" / "units_logics"
 UNIT_LOGIC_ZIP = UNIT_LOGIC_DIR / "unit_logic.zip"
 
+LANG_DIR = CORE_DIR / "Lang"
+ENGLISH_LOCALIZATION_DIR = LANG_DIR / "english" / "texts"
+ENGLISH_CITIES_LOCALIZATION_FILE = ENGLISH_LOCALIZATION_DIR / "cities.json"
+
 OUTPUT_DIR = PROJECT_ROOT / "output"
 
 
@@ -44,6 +48,26 @@ def require_unit_logic_source() -> Path:
         f"  ZIP:       {UNIT_LOGIC_ZIP}\n"
         f"  Directory: {UNIT_LOGIC_DIR}"
     )
+
+
+def require_english_localization_directory() -> Path:
+    """Return the canonical English localization text directory."""
+    if not ENGLISH_LOCALIZATION_DIR.is_dir():
+        raise FileNotFoundError(
+            "English localization directory was not found. Expected:\n"
+            f"  {ENGLISH_LOCALIZATION_DIR}"
+        )
+    return ENGLISH_LOCALIZATION_DIR
+
+
+def require_english_cities_localization_file() -> Path:
+    """Return the English city/building localization file."""
+    if not ENGLISH_CITIES_LOCALIZATION_FILE.is_file():
+        raise FileNotFoundError(
+            "English city localization file was not found. Expected:\n"
+            f"  {ENGLISH_CITIES_LOCALIZATION_FILE}"
+        )
+    return ENGLISH_CITIES_LOCALIZATION_FILE
 
 
 def require_output_directory(*, create: bool = True) -> Path:
