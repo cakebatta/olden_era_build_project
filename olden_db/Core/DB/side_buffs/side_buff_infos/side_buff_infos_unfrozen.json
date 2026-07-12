@@ -1,0 +1,12 @@
+{
+	"array": 
+	[
+		{
+			"id":	"fraction_law_unfrozen_21_bonus",
+			"sid":	"fraction_law_unfrozen_21_hero_bonus",
+			"allegiance": "enemy",
+			"duration": 1,
+			"durationPerStack": 0
+		}
+	]
+}

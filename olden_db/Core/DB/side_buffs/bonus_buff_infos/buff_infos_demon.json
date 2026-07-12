@@ -1,0 +1,32 @@
+{
+	"array": 
+	[
+		{
+			"id":	"sub_skill_faction_demons_6_bonus",
+			"sid":	"sub_skill_faction_demons_6_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"fraction_law_demon_6_bonus",
+			"sid":	"fraction_law_demon_6_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"fraction_law_demon_19_bonus",
+			"sid":	"fraction_law_demon_19_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"fraction_law_demon_30_bonus",
+			"sid":	"fraction_law_demon_30_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		}
+	]
+}

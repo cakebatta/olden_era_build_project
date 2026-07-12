@@ -1,0 +1,36 @@
+{
+	"array": 
+	[
+		{
+			"id":	"orb_of_inhibition_artifact_bonus_1",
+			"sid":	"orb_of_inhibition_artifact_hero_bonus",
+			"allegiance": "ally",
+			"duration": 2,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"orb_of_inhibition_artifact_bonus_2",
+			"sid":	"orb_of_inhibition_artifact_hero_bonus",
+			"allegiance": "enemy",
+			"duration": 2,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"ethereal_knowledge_vortex_dress_artifact_bonus",
+			"sid":	"ethereal_knowledge_vortex_dress_artifact_hero_bonus",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"ethereal_knowledge_vortex_dress_artifact_bonus_upgrade",
+			"sid":	"ethereal_knowledge_vortex_dress_artifact_hero_bonus_upgrade",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		}
+	]
+}

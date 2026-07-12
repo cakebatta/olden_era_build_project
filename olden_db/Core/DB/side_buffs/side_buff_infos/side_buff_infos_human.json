@@ -1,0 +1,48 @@
+{
+	"array": 
+	[
+		{
+			"id":	"side_buff_human_ability_1",
+			"sid":	"side_buff_human_ability_effect",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_human_ability_2",
+			"sid":	"side_buff_human_ability_effect",
+			"allegiance": "ally",
+			"duration": 2,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_human_ability_3",
+			"sid":	"side_buff_human_ability_effect",
+			"allegiance": "ally",
+			"duration": 3,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_human_ability_4",
+			"sid":	"side_buff_human_ability_effect",
+			"allegiance": "ally",
+			"duration": 4,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_human_ability_5",
+			"sid":	"side_buff_human_ability_effect",
+			"allegiance": "ally",
+			"duration": 5,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_human_ability_sub_skill_faction_human_6",
+			"sid":	"side_buff_human_ability_effect_sub_skill_faction_human_6",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		}
+	]
+}

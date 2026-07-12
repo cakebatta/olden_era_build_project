@@ -1,0 +1,38 @@
+{
+	"array": 
+	[
+		{
+			"id": "side_buff_human_ability_effect",
+
+			"canDispel": false,
+
+			"tags": [ "positive" ],
+			"addition": "none",
+
+			"heroStat": 
+			{
+				"offence": 1,
+				"defence": 1,
+				"spellPower": 1,
+				"intelligence": 1
+			}
+		},
+
+		{
+			"id": "side_buff_human_ability_effect_sub_skill_faction_human_6",
+
+			"canDispel": false,
+
+			"tags": [ "positive" ],
+			"addition": "data",
+
+			"heroStat": 
+			{
+				"offence": 2,
+				"defence": 2,
+				"spellPower": 2,
+				"intelligence": 2
+			}
+		}
+	]
+}

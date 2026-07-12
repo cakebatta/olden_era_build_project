@@ -1,0 +1,20 @@
+{
+	"array": 
+	[
+		{
+			"id": "fraction_law_unfrozen_21_hero_bonus",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "negative" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "start_round",
+					"mech": "add_mana", "values": [ "-6", "enemy", "0.0", "false" ]
+				}
+			]
+		}
+	]
+}

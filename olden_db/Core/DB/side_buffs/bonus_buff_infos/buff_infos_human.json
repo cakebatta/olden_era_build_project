@@ -1,0 +1,122 @@
+{
+	"array": 
+	[
+		{
+			"id":	"skill_faction_humans_1_bonus",
+			"sid":	"skill_faction_humans_1_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"skill_faction_humans_2_bonus",
+			"sid":	"skill_faction_humans_2_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"skill_faction_humans_3_bonus",
+			"sid":	"skill_faction_humans_3_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"skill_faction_humans_4_bonus",
+			"sid":	"skill_faction_humans_4_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"skill_faction_humans_5_bonus",
+			"sid":	"skill_faction_humans_5_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+				{
+					"id":	"skill_faction_humans_new_1_bonus",
+					"sid":	"skill_faction_humans_new_1_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+				{
+					"id":	"skill_faction_humans_new_2_bonus",
+					"sid":	"skill_faction_humans_new_2_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+				{
+					"id":	"skill_faction_humans_new_3_bonus",
+					"sid":	"skill_faction_humans_new_3_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+				{
+					"id":	"skill_faction_humans_new_4_bonus",
+					"sid":	"skill_faction_humans_new_4_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+				{
+					"id":	"skill_faction_humans_new_5_bonus",
+					"sid":	"skill_faction_humans_new_5_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+
+		{
+			"id":	"sub_skill_faction_humans_2_bonus",
+			"sid":	"sub_skill_faction_humans_2_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+				{
+					"id":	"sub_skill_faction_humans_new_2_bonus",
+					"sid":	"sub_skill_faction_humans_new_2_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+
+				{
+					"id":	"sub_skill_faction_humans_new_alt_2_bonus",
+					"sid":	"sub_skill_faction_humans_new_alt_2_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+
+		{
+			"id":	"sub_skill_faction_humans_4_bonus",
+			"sid":	"sub_skill_faction_humans_4_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+				{
+					"id":	"sub_skill_faction_humans_new_4_bonus",
+					"sid":	"sub_skill_faction_humans_new_4_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+
+		{
+			"id":	"sub_skill_faction_humans_5_bonus",
+			"sid":	"sub_skill_faction_humans_5_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+				{
+					"id":	"sub_skill_faction_humans_new_5_bonus",
+					"sid":	"sub_skill_faction_humans_new_5_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				},
+
+				{
+					"id":	"sub_skill_faction_humans_new_6_bonus",
+					"sid":	"sub_skill_faction_humans_new_6_unit_bonus",
+
+					"duration": 1, "charges": 1, "allegiance": "ally"
+				}
+	]
+}

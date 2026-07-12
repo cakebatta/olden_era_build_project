@@ -1,0 +1,166 @@
+{
+	"array": 
+	[
+		{
+			"id":	"side_buff_dungeon_ability_offence_1",
+			"sid":	"side_buff_dungeon_ability_offence_effect_1",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_defence_1",
+			"sid":	"side_buff_dungeon_ability_defence_effect_1",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_spellPower_1",
+			"sid":	"side_buff_dungeon_ability_spellPower_effect_1",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_offence_2",
+			"sid":	"side_buff_dungeon_ability_offence_effect_2",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_defence_2",
+			"sid":	"side_buff_dungeon_ability_defence_effect_2",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_spellPower_2",
+			"sid":	"side_buff_dungeon_ability_spellPower_effect_2",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_offence_3",
+			"sid":	"side_buff_dungeon_ability_offence_effect_3",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_defence_3",
+			"sid":	"side_buff_dungeon_ability_defence_effect_3",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_spellPower_3",
+			"sid":	"side_buff_dungeon_ability_spellPower_effect_3",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_offence_2_sub_skill_faction_dungeon_2_1",
+			"sid":	"side_buff_dungeon_ability_offence_effect_2_sub_skill_faction_dungeon_2_1",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_dungeon_ability_offence_2_sub_skill_faction_dungeon_2_2",
+			"sid":	"side_buff_dungeon_ability_offence_effect_2_sub_skill_faction_dungeon_2_2",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_dungeon_ability_offence_2_sub_skill_faction_dungeon_2_3",
+			"sid":	"side_buff_dungeon_ability_offence_effect_2_sub_skill_faction_dungeon_2_3",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_defence_2_sub_skill_faction_dungeon_2_1",
+			"sid":	"side_buff_dungeon_ability_defence_effect_2_sub_skill_faction_dungeon_2_1",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_dungeon_ability_defence_2_sub_skill_faction_dungeon_2_2",
+			"sid":	"side_buff_dungeon_ability_defence_effect_2_sub_skill_faction_dungeon_2_2",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_dungeon_ability_defence_2_sub_skill_faction_dungeon_2_3",
+			"sid":	"side_buff_dungeon_ability_defence_effect_2_sub_skill_faction_dungeon_2_3",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_spellPower_2_sub_skill_faction_dungeon_2_1",
+			"sid":	"side_buff_dungeon_ability_spellPower_effect_2_sub_skill_faction_dungeon_2_1",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_dungeon_ability_spellPower_2_sub_skill_faction_dungeon_2_2",
+			"sid":	"side_buff_dungeon_ability_spellPower_effect_2_sub_skill_faction_dungeon_2_2",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+		{
+			"id":	"side_buff_dungeon_ability_spellPower_2_sub_skill_faction_dungeon_2_3",
+			"sid":	"side_buff_dungeon_ability_spellPower_effect_2_sub_skill_faction_dungeon_2_3",
+			"allegiance": "enemy",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_offence_4_sub_skill_faction_dungeon_4",
+			"sid":	"side_buff_dungeon_ability_offence_effect_4_sub_skill_faction_dungeon_4",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_defence_4_sub_skill_faction_dungeon_4",
+			"sid":	"side_buff_dungeon_ability_defence_effect_4_sub_skill_faction_dungeon_4",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_dungeon_ability_spellPower_4_sub_skill_faction_dungeon_4",
+			"sid":	"side_buff_dungeon_ability_spellPower_effect_4_sub_skill_faction_dungeon_4",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		}
+	]
+}

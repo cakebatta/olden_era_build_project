@@ -1,0 +1,111 @@
+{
+	"array": 
+	[
+		{
+			"id":	"living_arrows_light_and_shade_cloak_artifact_bonus",
+			"sid":	"living_arrows_light_and_shade_cloak_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"living_arrows_shroomwood_bow_artifact_bonus",
+			"sid":	"living_arrows_shroomwood_bow_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"living_arrows_shroomwood_bow_law_bonus",
+			"sid":	"living_arrows_shroomwood_bow_law_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"living_arrows_item_set_bonus",
+			"sid":	"living_arrows_item_set_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"power_of_the_dragon_father_item_set_bonus_1",
+			"sid":	"power_of_the_dragon_father_item_set_unit_bonus_1",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"power_of_the_dragon_father_item_set_bonus_2",
+			"sid":	"power_of_the_dragon_father_item_set_unit_bonus_2",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"elixir_of_life_item_set_bonus",
+			"sid":	"elixir_of_life_item_set_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"ring_of_neutrality_artifact_bonus_ally",
+			"sid":	"ring_of_neutrality_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"ring_of_neutrality_artifact_bonus_enemy",
+			"sid":	"ring_of_neutrality_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "enemy"
+		},
+
+		{
+			"id":	"monster_head_artifact_bonus_ally",
+			"sid":	"monster_head_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"monster_head_artifact_bonus_enemy",
+			"sid":	"monster_head_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "enemy"
+		},
+
+
+
+		{
+			"id":	"gifts_of_dwarven_lords_automated_antimagic_shield_artifact_bonus",
+			"sid":	"gifts_of_dwarven_lords_automated_antimagic_shield_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"gifts_of_dwarven_lords_protective_belt_artifact_bonus",
+			"sid":	"gifts_of_dwarven_lords_protective_belt_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"gifts_of_dwarven_lords_crimson_resonance_controller_artifact_bonus",
+			"sid":	"gifts_of_dwarven_lords_crimson_resonance_controller_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"gifts_of_dwarven_lords_emerald_resonance_controller_artifact_bonus",
+			"sid":	"gifts_of_dwarven_lords_emerald_resonance_controller_artifact_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		}
+	]
+}

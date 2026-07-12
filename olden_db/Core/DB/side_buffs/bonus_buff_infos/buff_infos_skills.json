@@ -1,0 +1,156 @@
+{
+	"array": 
+	[
+		{
+			"id":	"skill_formation_1_bonus",
+			"sid":	"skill_formation_1_unit_bonus",
+
+			"duration": 2, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"skill_formation_2_bonus",
+			"sid":	"skill_formation_2_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"skill_formation_3_bonus",
+			"sid":	"skill_formation_3_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_formation_4_overwatch_bonus",
+			"sid":	"sub_skill_formation_4_overwatch_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_formation_5_preparation_bonus",
+			"sid":	"sub_skill_formation_5_preparation_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+
+
+		{
+			"id":	"sub_skill_siege_2_bonus",
+			"sid":	"sub_skill_siege_2_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+
+
+		{
+			"id":	"sub_skill_tactics_1_bonus",
+			"sid":	"sub_skill_tactics_1_offence_buff",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_tactics_1_bonus_add",
+			"sid":	"sub_skill_tactics_1_offence_add_buff",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_tactics_2_bonus",
+			"sid":	"sub_skill_tactics_2_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_tactics_3_bonus",
+			"sid":	"sub_skill_tactics_3_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_tactics_4_bonus",
+			"sid":	"sub_skill_tactics_4_defence_buff",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_tactics_4_bonus_add",
+			"sid":	"sub_skill_tactics_4_defence_add_buff",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_tactics_5_bonus",
+			"sid":	"sub_skill_tactics_5_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		
+
+		{
+			"id":	"sub_skill_leadership_3_bonus",
+			"sid":	"sub_skill_leadership_3_unit_bonus",
+
+			"duration": 2, "charges": 1, "allegiance": "ally"
+		},
+
+
+		{
+			"id":	"sub_skill_luck_4_bonus",
+			"sid":	"sub_skill_luck_4_disableCounterOnCrit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"sub_skill_luck_6_bonus",
+			"sid":	"sub_skill_luck_6_unit_bonus",
+
+			"duration": 2, "charges": 1, "allegiance": "ally"
+		},
+
+
+
+		{
+			"id":	"sub_skill_assault_6_bonus",
+			"sid":	"sub_skill_assault_6_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"sub_skill_protection_6_bonus",
+			"sid":	"sub_skill_protection_6_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+
+		{
+			"id":	"sub_skill_summoner_1_bonus",
+			"sid": "sub_skill_summoner_1_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_summoner_2_bonus",
+			"sid": "sub_skill_summoner_2_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+		{
+			"id":	"sub_skill_summoner_3_bonus",
+			"sid": "sub_skill_summoner_3_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		},
+
+		{
+			"id":	"sub_skill_summoner_4_bonus",
+			"sid": "sub_skill_summoner_4_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		}
+	]
+}

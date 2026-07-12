@@ -1,0 +1,55 @@
+{
+	"array": 
+	[
+		{
+			"id":	"sub_skill_faction_nature_4_bonus",
+			"sid":	"sub_skill_faction_nature_4_cd_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+
+		{
+			"id":	"sub_skill_faction_nature_5_bonus",
+			"sid":	"sub_skill_faction_nature_5_damage_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+		
+		{
+			"id":	"sub_skill_faction_nature_5_bonus_buff",
+			"sid":	"sub_skill_faction_nature_5_damage_bonus_buff",
+			"allegiance": "ally",
+			"duration": 1
+		},
+
+		{
+			"id":	"sub_skill_faction_nature_6_bonus",
+			"sid":	"sub_skill_faction_nature_6_stat_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+		
+		{
+			"id":	"sub_skill_faction_nature_6_bonus_buff",
+			"sid":	"sub_skill_faction_nature_6_stat_bonus_buff",
+			"allegiance": "ally",
+			"duration": 1
+		},		
+		
+		{
+			"id":	"side_buff_unit_twinkle",
+			"sid":	"side_buff_unit_twinkle_effect",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_unit_twinkle_death",
+			"sid":	"side_buff_unit_twinkle_death_effect",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		}
+	]
+}

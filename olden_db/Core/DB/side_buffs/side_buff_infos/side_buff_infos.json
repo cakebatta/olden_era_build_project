@@ -1,0 +1,20 @@
+{
+	"array": 
+	[
+		{
+			"id":	"side_buff_disable_hero_ability",
+			"sid":	"side_buff_disable_hero_ability_effect",
+			"allegiance": "enemy",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_disable_magic_book",
+			"sid":	"side_buff_disable_magic_book_effect",
+			"allegiance": "enemy",
+			"duration": 1,
+			"durationPerStack": 0
+		}
+	]
+}

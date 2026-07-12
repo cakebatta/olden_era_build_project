@@ -1,0 +1,347 @@
+{
+	"array": 
+	[
+		{
+			"id": "sub_skill_luck_5_magicCrits_bonus",
+
+			"infinite": true, "canDispel": false,
+			
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"magicCrits": true,
+				"crit": 0.5
+			}
+		},
+
+		{
+			"id": "sub_skill_tactics_3_energy_bonus",
+
+			"infinite": true, "canDispel": false,
+			
+			"tags": [ "positive" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic",
+					"mech": "add_energy", "values": [ "levels", "ally", "enemy", "1" ]
+				}
+			]
+		},
+
+		{
+			"id": "sub_skill_wisdom_3_mana_bonus",
+
+			"infinite": true, "canDispel": false,
+			
+			"tags": [ "positive" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "side_used_energy",
+					"mech": "add_mana", "values": [ "4", "enemy", "0.0", "false" ]
+				}
+			]
+		},
+
+		{
+			"id": "side_buff_sub_skill_magic_day_effect",
+
+			"infinite": true, "canDispel": true,
+
+			"tags": [ "positive" ],
+			
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic_start",
+					"mech": "dispel_side_on_cast_magic",
+					"values": [ "ally" ]
+				}
+			],
+
+			"heroStat": 
+			{
+				"finalManaCostBonusPercent": -1.0
+			}
+		},
+
+		{
+			"id": "side_buff_sub_skill_magic_night_effect",
+
+			"infinite": true, "canDispel": true,
+
+			"tags": [ "negative" ],
+			
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic",
+					"mech": "dispel_side_on_cast_magic",
+					"values": [ "ally" ]
+				}
+			],
+
+			"heroStat": 
+			{
+				"spellPowerFinal": -0.5
+			}
+		},
+
+		{
+			"id": "side_buff_sub_skill_magic_space_effect",
+
+			"infinite": true, "canDispel": true,
+
+			"tags": [ "negative" ],
+			
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic",
+					"mech": "dispel_side_on_cast_magic",
+					"values": [ "ally" ]
+				}
+			],
+
+			"heroStat": 
+			{
+				"finalManaCostBonusPercent": 1.0
+			}
+		},
+
+		{
+			"id": "side_buff_sub_skill_magic_primal_effect",
+
+			"infinite": true, "canDispel": true,
+			"skipMechTriggers": 1,
+			"tags": [ "positive" ],
+			
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic",
+					"mech": "dispel_side_on_cast_magic",
+					"values": [ "ally" ]
+				}
+			],
+
+			"heroStat": 
+			{
+				"spellPowerFinal": 0.5
+			}
+		},
+
+
+
+
+
+		{
+			"id": "skill_warrior_and_mage_two_faced_mask_artifact_delta_1",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics": [ { "mech": "add_hero_ability_charges", "trigger": "unit_died", "values": [ "1", "ally", "enemy", "skill_warrior_ability", "1" ] } ]
+		},
+
+		{
+			"id": "skill_warrior_and_mage_two_faced_mask_artifact_delta_2",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics": [ { "mech": "add_hero_ability_charges", "trigger": "unit_died", "values": [ "1", "ally", "enemy", "skill_mage_ability", "1" ] } ]
+		},
+
+		{
+			"id": "skill_warrior_and_mage_sub_skill_battle_artistry_2_delta_1",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics": [ { "mech": "add_hero_custom_ability_charges", "trigger": "unit_died", "values": [ "1", "all", "ally", "skill_warrior_ability", "1" ] } ]
+		},
+
+		{
+			"id": "skill_warrior_and_mage_sub_skill_battle_artistry_2_delta_2",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics": [ { "mech": "add_hero_custom_ability_charges", "trigger": "unit_died", "values": [ "1", "all", "ally", "skill_campaign_hero_1_ability", "1" ] } ]
+		},
+		
+		{
+			"id": "skill_warrior_and_mage_sub_skill_battle_artistry_5_delta_1",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics": [ { "mech": "add_hero_ability_charges", "trigger": "unit_died", "values": [ "1", "ally", "enemy", "skill_warrior_ability", "1" ] } ]
+		},
+
+		{
+			"id": "skill_warrior_and_mage_sub_skill_battle_artistry_5_delta_2",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics": [ { "mech": "add_hero_ability_charges", "trigger": "unit_died", "values": [ "1", "ally", "enemy", "skill_campaign_hero_1_ability", "1" ] } ]
+		},
+
+
+
+
+
+		{
+			"id": "sub_skill_battlemage_1_hero_bonus",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic_start",
+					"mech": "side_buff_on_cast_magic", "values": [ "ally", "sub_skill_battlemage_1_bonus_buff" ]
+				}
+			]
+		},
+
+		{
+			"id": "sub_skill_battlemage_1_hero_buff",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"offence": 1
+			}
+		},
+
+		{
+			"id": "sub_skill_battlemage_2_hero_bonus",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic_start",
+					"mech": "side_buff_on_cast_magic", "values": [ "ally", "sub_skill_battlemage_2_bonus_buff" ]
+				}
+			]
+		},
+
+		{
+			"id": "sub_skill_battlemage_2_hero_buff",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"defence": 1
+			}
+		},
+
+		{
+			"id": "sub_skill_battlemage_3_hero_bonus",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic_start",
+					"mech": "side_buff_on_cast_magic", "values": [ "ally", "sub_skill_battlemage_3_bonus_buff" ]
+				}
+			]
+		},
+
+		{
+			"id": "sub_skill_battlemage_3_hero_buff",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"spellPower": 1
+			}
+		},
+
+		{
+			"id": "sub_skill_sub_skill_tactics_6_mana_bonus",
+
+			"infinite": true, "canDispel": false,
+			
+			"tags": [ "positive" ],
+			"actions":
+			[
+				{
+					"trigger": "side_used_energy",
+					"triggerConditions": 
+					[
+						{
+							"checkFunction": "allegiance_sign",
+							"values": [ "ally", "negative" ]
+						}
+					],
+
+					"damageDealer": 
+					{
+						"tags": [ "passive" ],
+						"triggerCounter": false,
+						
+						"instacast": true,
+						"untargetedCast": true,
+
+						"damageTarget_": "none",
+						"statDmgMult": 0.0,
+
+						"attackPatternSid": "attack_single_x100",
+
+						"castTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"affectTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"targetMechanics":
+						[
+							{ "mech": "change_mana", "values": [ "add", "ally", "4", "0", "0", "true" ] }
+						]
+					}
+				}
+			]
+		}
+	]
+}

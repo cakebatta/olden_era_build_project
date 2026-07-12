@@ -1,0 +1,11 @@
+{
+	"array": 
+	[
+		{
+			"id":	"sub_class_nature_warrior_1_bonus",
+			"sid":	"sub_class_nature_warrior_1_unit_bonus",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		}
+	]
+}

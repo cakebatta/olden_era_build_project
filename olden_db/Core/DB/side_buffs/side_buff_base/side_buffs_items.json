@@ -1,0 +1,50 @@
+{
+	"array": 
+	[
+		{
+			"id": "orb_of_inhibition_artifact_hero_bonus",
+
+			"canDispel": false,
+
+			"tags": [ "negative" ],
+
+			"heroStat": 
+			{
+				"disableMagicBook": true,
+				"banHeroAbilities": true
+			}
+		},
+
+		{
+			"id": "ethereal_knowledge_vortex_dress_artifact_hero_bonus",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic",
+					"mech": "add_mana", "values": [ "0", "enemy", "0.4", "false" ]
+				}
+			]
+		},
+
+		{
+			"id": "ethereal_knowledge_vortex_dress_artifact_hero_bonus_upgrade",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"mechanics":
+			[
+				{
+					"trigger": "cast_magic",
+					"mech": "add_mana", "values": [ "0", "enemy", "0.2", "false" ]
+				}
+			]
+		}
+	]
+}

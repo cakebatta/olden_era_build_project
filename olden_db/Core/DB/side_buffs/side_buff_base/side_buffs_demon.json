@@ -1,0 +1,19 @@
+{
+	"array": 
+	[
+		{
+			"id": "side_buff_sub_class_demons_might_2_ability_effect",
+
+			"infinite": true, "canDispel": true,
+
+			"tags": [ "side_buff_sub_class_demons_might_2_ability_effect" ],
+
+			"heroStat": 
+			{
+				"offence": 4,
+				"defence": 4,
+				"spellPower": 4
+			}
+		}
+	]
+}

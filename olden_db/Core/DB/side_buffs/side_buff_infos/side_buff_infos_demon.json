@@ -1,0 +1,12 @@
+{
+	"array": 
+	[
+		{
+			"id":	"side_buff_sub_class_demons_might_2_ability",
+			"sid":	"side_buff_sub_class_demons_might_2_ability_effect",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+	"array": 
+	[
+		{
+			"id": "burning_info",
+			"sid": "burning",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+		{
+			"id": "burning_info_2",
+			"sid": "burning_2",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+		{
+			"id": "burning_info_3",
+			"sid": "burning_3",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+
+		{
+			"id":	"magic_despair_effect_old_bonus",
+			"sid":	"magic_despair_effect_old",
+
+			"duration": 1, "charges": 1, "allegiance": "ally"
+		}
+	]
+}

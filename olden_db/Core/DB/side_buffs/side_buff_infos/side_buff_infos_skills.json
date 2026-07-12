@@ -1,0 +1,135 @@
+{
+	"array": 
+	[
+		{
+			"id":	"sub_skill_luck_5_bonus",
+			"sid":	"sub_skill_luck_5_magicCrits_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+
+		{
+			"id":	"sub_skill_resistance_3_bonus",
+			"sid":	"sub_skill_resistance_3_debuffDuration_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		},	
+
+		{
+			"id":	"sub_skill_battlemage_1_bonus",
+			"sid":	"sub_skill_battlemage_1_hero_bonus",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"sub_skill_battlemage_1_bonus_buff",
+			"sid":	"sub_skill_battlemage_1_hero_buff",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"sub_skill_battlemage_2_bonus",
+			"sid":	"sub_skill_battlemage_2_hero_bonus",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"sub_skill_battlemage_2_bonus_buff",
+			"sid":	"sub_skill_battlemage_2_hero_buff",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"sub_skill_battlemage_3_bonus",
+			"sid":	"sub_skill_battlemage_3_hero_bonus",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"sub_skill_battlemage_3_bonus_buff",
+			"sid":	"sub_skill_battlemage_3_hero_buff",
+			"allegiance": "ally",
+			"duration": 9999,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"sub_skill_tactics_3_bonus",
+			"sid":	"sub_skill_tactics_3_energy_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+
+		{
+			"id":	"sub_skill_wisdom_3_bonus",
+			"sid":	"sub_skill_wisdom_3_mana_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		},
+
+		{
+			"id":	"side_buff_sub_skill_magic_day",
+			"sid":	"side_buff_sub_skill_magic_day_effect",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_sub_skill_magic_night",
+			"sid":	"side_buff_sub_skill_magic_night_effect",
+			"allegiance": "enemy",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_sub_skill_magic_space",
+			"sid":	"side_buff_sub_skill_magic_space_effect",
+			"allegiance": "enemy",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"side_buff_sub_skill_magic_primal",
+			"sid":	"side_buff_sub_skill_magic_primal_effect",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"skill_warrior_and_mage_sub_skill_battle_artistry_2_warrior_bonus",
+			"sid":	"skill_warrior_and_mage_sub_skill_battle_artistry_2_delta_1",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"skill_warrior_and_mage_sub_skill_battle_artistry_5_warrior_bonus",
+			"sid":	"skill_warrior_and_mage_sub_skill_battle_artistry_5_delta_1",
+			"allegiance": "ally",
+			"duration": 1,
+			"durationPerStack": 0
+		},
+
+		{
+			"id":	"sub_skill_sub_skill_tactics_6_bonus",
+			"sid":	"sub_skill_sub_skill_tactics_6_mana_bonus",
+			"allegiance": "ally",
+			"duration": 9999
+		}
+	]
+}

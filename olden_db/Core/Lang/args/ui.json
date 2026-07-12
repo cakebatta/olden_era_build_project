@@ -1,0 +1,10 @@
+{
+"tokensArgs": [
+{"sid":"unitStat_offence_description_detailed","args":["unitStat_offence_description_detailed_0","unitStat_offence_description_detailed_0","unitStat_offence_description_detailed_1"]},
+{"sid":"unitStat_defence_description_detailed","args":["unitStat_defence_description_detailed_0","unitStat_defence_description_detailed_0","unitStat_defence_description_detailed_1"]},
+{"sid":"unitStat_moral_description_detailed","args":["unitStat_moral_description_detailed_0","unitStat_moral_description_detailed_0"]},
+{"sid":"unitStat_luck_description_detailed","args":["unitStat_luck_description_detailed_0","unitStat_luck_description_detailed_0","unitStat_luck_description_detailed_1","unitStat_luck_description_detailed_2"]},
+{"sid":"necromancy_ModeBody","args":["current_necro_skill_cost_1_1","current_necro_skill_cost_1_2","current_necro_skill_cost_2_1","current_necro_skill_cost_2_2","current_necro_skill_cost_3_1","current_necro_skill_cost_3_2","current_necro_skill_cost_4_1","current_necro_skill_cost_4_2","current_necro_skill_cost_5_1","current_necro_skill_cost_5_2","current_necro_skill_cost_6_1","current_necro_skill_cost_6_2","current_necro_skill_cost_7_1","current_necro_skill_cost_7_2","current_necro_skill_cost_8_1","current_necro_skill_cost_8_2"]},
+{"sid":"intelligence_4_buff_alt_description","args":["","1"]},
+{"sid":"unitWaiting","args":["","3"]}
+] }

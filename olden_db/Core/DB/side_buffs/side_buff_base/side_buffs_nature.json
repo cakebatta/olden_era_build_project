@@ -1,0 +1,225 @@
+{
+	"array": 
+	[
+		{
+			"id": "sub_skill_faction_nature_4_cd_bonus",
+
+			"infinite": true, "canDispel": false,
+			
+			"tags": [ "positive" ],
+			"actions":
+			[
+				{
+					"trigger": "side_energy_level_charge",
+					"triggerConditions": 
+					[
+						{
+							"checkFunction": "allegiance_sign",
+							"values": [ "ally", "negative" ]
+						}
+					],
+
+					"damageDealer": 
+					{
+						"tags": [ "passive" ],
+						"triggerCounter": false,
+						
+						"instacast": true,
+						"untargetedCast": true,
+
+						"damageTarget_": "none",
+						"statDmgMult": 0.0,
+
+						"attackPatternSid": "attack_single_x100",
+
+						"castTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"affectTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"targetMechanics":
+						[
+							{ "mech": "add_magic_cd", "values": [ "ally", "-1", "true" ] }
+						]
+					}
+				}
+			]
+		},
+
+		{
+			"id": "sub_skill_faction_nature_5_damage_bonus",
+
+			"infinite": true, "canDispel": false,
+			
+			"tags": [ "positive" ],
+			"actions":
+			[
+				{
+					"trigger": "side_energy_level_charge",
+					"triggerConditions": 
+					[
+						{
+							"checkFunction": "allegiance_sign",
+							"values": [ "ally", "negative" ]
+						}
+					],
+
+					"damageDealer": 
+					{
+						"tags": [ "passive" ],
+						"triggerCounter": false,
+						
+						"instacast": true,
+						"untargetedCast": true,
+
+						"damageTarget_": "none",
+						"statDmgMult": 0.0,
+
+						"attackPatternSid": "attack_single_x100",
+
+						"castTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"affectTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"targetMechanics":
+						[
+							{ "mech": "side_buff", "values": [ "sub_skill_faction_nature_5_bonus_buff" ] }
+						]
+					}
+				}
+			]
+		},
+
+		{
+			"id": "sub_skill_faction_nature_5_damage_bonus_buff",
+
+			"canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"heroicStrikeDamagePerLevelBonus": 0.15
+			}
+		},
+
+		{
+			"id": "sub_skill_faction_nature_6_stat_bonus",
+
+			"infinite": true, "canDispel": false,
+			
+			"tags": [ "positive" ],
+			"actions":
+			[
+				{
+					"trigger": "side_energy_level_charge",
+					"triggerConditions": 
+					[
+						{
+							"checkFunction": "allegiance_sign",
+							"values": [ "ally", "negative" ]
+						}
+					],
+
+					"damageDealer": 
+					{
+						"tags": [ "passive" ],
+						"triggerCounter": false,
+						
+						"instacast": true,
+						"untargetedCast": true,
+
+						"damageTarget_": "none",
+						"statDmgMult": 0.0,
+
+						"attackPatternSid": "attack_single_x100",
+
+						"castTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"affectTargetParams":   
+						{
+							"targetTags": [ "unit" ],
+							"castTarget_": "self",
+							"targetCondition_": "all"
+						},
+
+						"targetMechanics":
+						[
+							{ "mech": "side_buff", "values": [ "sub_skill_faction_nature_6_bonus_buff" ] }
+						]
+					}
+				}
+			]
+		},
+
+		{
+			"id": "sub_skill_faction_nature_6_stat_bonus_buff",
+
+			"canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"offence": 2,
+				"defence": 2,
+				"spellPower": 2,
+				"intelligence": 2
+			}
+		},
+
+
+		
+
+
+		{
+			"id": "side_buff_unit_twinkle_effect",
+
+			"canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"spellPower": 2
+			}
+		},
+
+		{
+			"id": "side_buff_unit_twinkle_death_effect",
+
+			"infinite": true, "canDispel": false,
+
+			"tags": [ "positive" ],
+
+			"heroStat": 
+			{
+				"spellPower": 1
+			}
+		}
+	]
+}
