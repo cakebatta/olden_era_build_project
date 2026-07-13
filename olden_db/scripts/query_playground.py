@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from olden_db.database import load_default_game_data
 from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
 from olden_db.planner import BuildPlan, GameDate
 from olden_db.query import PlanningQueryService, QueryError
@@ -199,7 +198,7 @@ def run_playground(
 
 
 def main() -> None:
-    service = PlanningQueryService(load_default_game_data())
+    service = PlanningQueryService.from_default_game_data()
     run_playground(service)
 
 

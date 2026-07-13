@@ -1,0 +1,13 @@
+*** Begin Patch
+*** Update File: olden_db/scripts/query_playground.py
+@@
+-from olden_db.database import load_default_game_data
+ from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
+ from olden_db.planner import BuildPlan, GameDate
+ from olden_db.query import PlanningQueryService, QueryError
+@@
+ def main() -> None:
+-    service = PlanningQueryService(load_default_game_data())
++    service = PlanningQueryService.from_default_game_data()
+     run_playground(service)
+*** End Patch
