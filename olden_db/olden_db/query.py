@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .database import LoadedGameData
+from .database import LoadedGameData, load_default_game_data
 from .graph import build_dependency_graph, iter_topological_orders
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
 from .planner import BuildPlan, GameDate, plan_build_order
@@ -26,8 +26,12 @@ class PlanningQueryService:
 
     data: LoadedGameData
 
+    @classmethod
+    def from_default_game_data(cls) -> "PlanningQueryService":
+        """Create a ready-to-use service from the canonical game data."""
+        return cls(load_default_game_data())
+
     def get_building(self, faction: str, sid: str, level: int) -> BuildingLevel:
-        """Return one building identified by faction, canonical SID, and level."""
         city = self._get_city(faction)
         key = self._make_key(faction, sid, level)
         try:
@@ -37,53 +41,20 @@ class PlanningQueryService:
                 f"Unknown building: faction={faction!r}, sid={sid!r}, level={level}"
             ) from exc
 
-    def get_prerequisites(
-        self, faction: str, sid: str, level: int
-    ) -> tuple[BuildingLevel, ...]:
-        """Return direct prerequisite objects in deterministic order."""
+    def get_prerequisites(self, faction: str, sid: str, level: int) -> tuple[BuildingLevel, ...]:
         city = self._get_city(faction)
         building = self.get_building(faction, sid, level)
-        return tuple(
-            city.buildings[key]
-            for key in sorted(
-                building.prerequisites,
-                key=lambda item: (item.sid, item.level),
-            )
-        )
+        return tuple(city.buildings[key] for key in sorted(building.prerequisites, key=lambda item: (item.sid, item.level)))
 
-    def generate_build_plan(
-        self,
-        faction: str,
-        sid: str,
-        level: int,
-        *,
-        starting_date: GameDate = GameDate(1, 1, 1),
-    ) -> BuildPlan:
-        """Return a plan using the first deterministic legal build order."""
+    def generate_build_plan(self, faction: str, sid: str, level: int, *, starting_date: GameDate = GameDate(1, 1, 1)) -> BuildPlan:
         city, graph = self._build_graph(faction, sid, level)
         order = next(iter_topological_orders(graph))
-        return plan_build_order(
-            city,
-            graph,
-            order,
-            starting_date=starting_date,
-        )
+        return plan_build_order(city, graph, order, starting_date=starting_date)
 
-    def get_cumulative_cost(
-        self, faction: str, sid: str, level: int
-    ) -> ResourceCost:
-        """Return the total cost of the deterministic build plan."""
+    def get_cumulative_cost(self, faction: str, sid: str, level: int) -> ResourceCost:
         return self.generate_build_plan(faction, sid, level).total_cost
 
-    def enumerate_build_orders(
-        self,
-        faction: str,
-        sid: str,
-        level: int,
-        *,
-        max_orders: int | None = None,
-    ) -> tuple[tuple[BuildingKey, ...], ...]:
-        """Return legal orders in the order defined by the graph module."""
+    def enumerate_build_orders(self, faction: str, sid: str, level: int, *, max_orders: int | None = None) -> tuple[tuple[BuildingKey, ...], ...]:
         _, graph = self._build_graph(faction, sid, level)
         return tuple(iter_topological_orders(graph, max_orders=max_orders))
 
