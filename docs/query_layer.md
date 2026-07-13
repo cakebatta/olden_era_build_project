@@ -2,13 +2,13 @@
 
 ## Purpose
 
-The Query Layer is the stable public interface to the backend. It
-answers planning questions by coordinating existing backend components
-while hiding implementation details.
+The Query Layer is the stable public interface to the backend. It answers
+planning questions by coordinating existing backend components while hiding
+implementation details.
 
 ## Architecture
 
-``` text
+```text
 Game Assets
     ↓
 Parsers
@@ -25,38 +25,56 @@ Query Layer
 
 ## Responsibilities
 
-The Query Layer may: - Accept user-oriented requests. - Coordinate
-planner, graph, localization, and database modules. - Return
-deterministic domain objects. - Validate inputs.
+The Query Layer may coordinate existing database, graph, planner, and
+localization modules, validate requests, and return deterministic domain
+objects. It must not parse assets, duplicate algorithms, or contain
+presentation logic.
 
-The Query Layer must not: - Parse game assets. - Implement planning
-algorithms. - Contain presentation logic. - Duplicate backend business
-logic.
+## Initial Public Interface
 
-## Initial Query Set
+```python
+from olden_db.database import load_default_game_data
+from olden_db.query import PlanningQueryService
 
-1.  Retrieve building information by SID.
-2.  Retrieve building prerequisites.
-3.  Generate a deterministic build plan.
-4.  Compute cumulative resource costs.
-5.  Enumerate legal build orders.
+queries = PlanningQueryService(load_default_game_data())
+```
+
+Building identity is explicit: `faction`, canonical `sid`, and `level`.
+
+- `get_building(...) -> BuildingLevel`
+- `get_prerequisites(...) -> tuple[BuildingLevel, ...]`
+- `generate_build_plan(...) -> BuildPlan`
+- `get_cumulative_cost(...) -> ResourceCost`
+- `enumerate_build_orders(...) -> tuple[tuple[BuildingKey, ...], ...]`
+
+The plan uses the first order yielded by the existing deterministic graph API.
+Prerequisites are direct prerequisites sorted by SID and level. Formatting and
+localization remain responsibilities of future clients.
+
+Invalid requests raise `QueryError` subclasses:
+`UnknownFactionError` and `UnknownBuildingError`.
 
 ## Design Principles
 
--   SIDs are canonical.
--   Localization is presentation only.
--   Results are deterministic.
--   Public APIs should remain stable.
+- SIDs are canonical.
+- Localization is presentation only.
+- Results are deterministic.
+- Existing graph and planner algorithms remain authoritative.
+- Public APIs should remain stable.
+- Structured domain objects are returned without client formatting.
 
-## Non-Goals
+## Validation
 
-The Query Layer does not model AI, combat, random economy, or map
-generation.
+From the outer `olden_db/` directory:
+
+```bash
+python -m scripts.test_query
+```
 
 ## Sprint 2 Acceptance Criteria
 
--   Dedicated query module exists.
--   Initial query set implemented.
--   Existing backend APIs unchanged.
--   Deterministic validation passes.
--   External clients interact only through the Query Layer.
+- Dedicated query module exists.
+- Initial query set implemented.
+- Existing backend APIs unchanged.
+- Deterministic validation passes.
+- External clients can obtain initial planning information through the Query Layer.
