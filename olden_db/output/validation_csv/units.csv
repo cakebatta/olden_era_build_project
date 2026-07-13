@@ -1,150 +1,150 @@
 sid,faction,tier,upgrade_sid,source,gold,wood,ore,gemstones,crystals,mercury,dust,graal
-trick_demon,demon,1,trick_demon_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/trick_demon_l.json,90,0,0,0,0,0,0,0
-trick_demon_upg,demon,1,trick_demon_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/trick_demon_upg_l.json,110,0,0,0,0,0,0,0
-trick_demon_upg_alt,demon,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/trick_demon_upg_alt_l.json,110,0,0,0,0,0,0,0
-locust,demon,2,locust_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/locust_l.json,130,0,0,0,0,0,0,0
-locust_upg,demon,2,locust_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/locust_upg_l.json,170,0,0,0,0,0,0,0
-locust_upg_alt,demon,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/locust_upg_alt_l.json,170,0,0,0,0,0,0,0
-wasp,demon,3,wasp_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/wasp_l.json,255,0,0,0,0,0,0,0
-wasp_upg,demon,3,wasp_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/wasp_upg_l.json,350,0,0,0,0,0,0,0
-wasp_upg_alt,demon,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/wasp_upg_alt_l.json,350,0,0,0,0,0,0,0
-jaw,demon,4,jaw_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/jaw_l.json,280,0,0,0,0,0,0,0
-jaw_upg,demon,4,jaw_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/jaw_upg_l.json,390,0,0,0,0,0,0,0
-jaw_upg_alt,demon,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/jaw_upg_alt_l.json,390,0,0,0,0,0,0,0
-lava_larva,demon,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/lava_larva_l.json,100,0,0,0,0,0,0,0
-godslayer,demon,5,godslayer_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/godslayer_l.json,750,0,0,0,0,0,0,0
-godslayer_upg,demon,5,godslayer_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/godslayer_upg_l.json,1080,0,0,0,0,0,0,0
-godslayer_upg_alt,demon,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/godslayer_upg_alt_l.json,1080,0,0,0,0,0,0,0
-olgoi,demon,6,olgoi_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/olgoi_l.json,1200,0,0,0,0,0,0,0
-olgoi_upg,demon,6,olgoi_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/olgoi_upg_l.json,1900,0,0,0,0,0,0,0
-olgoi_upg_alt,demon,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/olgoi_upg_alt_l.json,1900,0,0,0,0,0,0,0
-hive_queen,demon,7,hive_queen_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/hive_queen_l.json,2100,0,0,0,1,0,0,0
-hive_queen_upg,demon,7,hive_queen_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/hive_queen_upg_l.json,3400,0,0,0,2,0,0,0
-hive_queen_upg_alt,demon,7,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/demons/hive_queen_upg_alt_l.json,3400,0,0,0,2,0,0,0
-trogl,dungeon,1,trogl_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/trogl_l.json,50,0,0,0,0,0,0,0
-trogl_upg,dungeon,1,trogl_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/trogl_upg_l.json,60,0,0,0,0,0,0,0
-trogl_upg_alt,dungeon,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/trogl_upg_alt_l.json,60,0,0,0,0,0,0,0
-assassin,dungeon,2,assassin_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/assassin_l.json,120,0,0,0,0,0,0,0
-assassin_upg,dungeon,2,assassin_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/assassin_upg_l.json,160,0,0,0,0,0,0,0
-assassin_upg_alt,dungeon,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/assassin_upg_alt_l.json,160,0,0,0,0,0,0,0
-blade_dancer,dungeon,3,blade_dancer_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/blade_dancer_l.json,165,0,0,0,0,0,0,0
-blade_dancer_upg,dungeon,3,blade_dancer_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/blade_dancer_upg_l.json,230,0,0,0,0,0,0,0
-blade_dancer_upg_alt,dungeon,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/blade_dancer_upg_alt_l.json,230,0,0,0,0,0,0,0
-minos,dungeon,4,minos_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/minos_l.json,380,0,0,0,0,0,0,0
-minos_upg,dungeon,4,minos_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/minos_upg_l.json,530,0,0,0,0,0,0,0
-minos_upg_alt,dungeon,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/minos_upg_alt_l.json,530,0,0,0,0,0,0,0
-medusa,dungeon,5,medusa_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/medusa_l.json,490,0,0,0,0,0,0,0
-medusa_upg,dungeon,5,medusa_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/medusa_upg_l.json,700,0,0,0,0,0,0,0
-medusa_upg_alt,dungeon,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/medusa_upg_alt_l.json,700,0,0,0,0,0,0,0
-hydra,dungeon,6,hydra_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/hydra_l.json,1200,0,0,0,0,0,0,0
-hydra_upg,dungeon,6,hydra_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/hydra_upg_l.json,1800,0,0,0,0,0,0,0
-hydra_upg_alt,dungeon,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/hydra_upg_alt_l.json,1800,0,0,0,0,0,0,0
-black_dragon,dungeon,7,black_dragon_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/black_dragon_l.json,3000,0,0,1,0,0,0,0
-black_dragon_upg,dungeon,7,black_dragon_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/black_dragon_upg_l.json,5000,0,0,2,0,0,0,0
-black_dragon_upg_alt,dungeon,7,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/dungeon/black_dragon_upg_alt_l.json,5000,0,0,2,0,0,0,0
-esquire,human,1,esquire_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/esquire_l.json,85,0,0,0,0,0,0,0
-esquire_upg,human,1,esquire_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/esquire_upg_l.json,110,0,0,0,0,0,0,0
-esquire_upg_alt,human,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/esquire_upg_alt_l.json,110,0,0,0,0,0,0,0
-crossbowman,human,2,crossbowman_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/crossbowman_l.json,95,0,0,0,0,0,0,0
-crossbowman_upg,human,2,crossbowman_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/crossbowman_upg_l.json,130,0,0,0,0,0,0,0
-crossbowman_upg_alt,human,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/crossbowman_upg_alt_l.json,130,0,0,0,0,0,0,0
-griffin,human,3,griffin_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/griffin_l.json,270,0,0,0,0,0,0,0
-griffin_upg,human,3,griffin_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/griffin_upg_l.json,360,0,0,0,0,0,0,0
-griffin_upg_alt,human,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/griffin_upg_alt_l.json,360,0,0,0,0,0,0,0
-lightweaver,human,4,lightweaver_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/lightweaver_l.json,310,0,0,0,0,0,0,0
-lightweaver_upg,human,4,lightweaver_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/lightweaver_upg_l.json,440,0,0,0,0,0,0,0
-lightweaver_upg_alt,human,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/lightweaver_upg_alt_l.json,440,0,0,0,0,0,0,0
-sunlight_cavalry,human,5,sunlight_cavalry_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/sunlight_cavalry_l.json,850,0,0,0,0,0,0,0
-sunlight_cavalry_upg,human,5,sunlight_cavalry_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/sunlight_cavalry_upg_l.json,1220,0,0,0,0,0,0,0
-sunlight_cavalry_upg_alt,human,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/sunlight_cavalry_upg_alt_l.json,1220,0,0,0,0,0,0,0
-inquisitor,human,6,inquisitor_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/inquisitor_l.json,1000,0,0,0,0,0,0,0
-inquisitor_upg,human,6,inquisitor_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/inquisitor_upg_l.json,1500,0,0,0,0,0,0,0
-inquisitor_upg_alt,human,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/inquisitor_upg_alt_l.json,1500,0,0,0,0,0,0,0
-angel,human,7,angel_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/angel_l.json,2400,0,0,1,0,0,0,0
-angel_upg,human,7,angel_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/angel_upg_l.json,4000,0,0,2,0,0,0,0
-angel_upg_alt,human,7,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/humans/angel_upg_alt_l.json,4000,0,0,2,0,0,0,0
-elf_tracker,nature,1,elf_tracker_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/elf_tracker_l.json,115,0,0,0,0,0,0,0
-elf_tracker_upg,nature,1,elf_tracker_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/elf_tracker_upg_l.json,150,0,0,0,0,0,0,0
-elf_tracker_upg_alt,nature,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/elf_tracker_upg_alt_l.json,150,0,0,0,0,0,0,0
-twinkle,nature,2,twinkle_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/twinkle_l.json,185,0,0,0,0,0,0,0
-twinkle_upg,nature,2,twinkle_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/twinkle_upg_l.json,250,0,0,0,0,0,0,0
-twinkle_upg_alt,nature,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/twinkle_upg_alt_l.json,250,0,0,0,0,0,0,0
-ent,nature,3,ent_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/ent_l.json,220,0,0,0,0,0,0,0
-ent_upg,nature,3,ent_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/ent_upg_l.json,300,0,0,0,0,0,0,0
-ent_upg_alt,nature,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/ent_upg_alt_l.json,300,0,0,0,0,0,0,0
-aqualotl,nature,4,aqualotl_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/aqualotl_l.json,360,0,0,0,0,0,0,0
-aqualotl_upg,nature,4,aqualotl_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/aqualotl_upg_l.json,510,0,0,0,0,0,0,0
-aqualotl_upg_alt,nature,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/aqualotl_upg_alt_l.json,510,0,0,0,0,0,0,0
-druid,nature,5,druid_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/druid_l.json,640,0,0,0,0,0,0,0
-druid_upg,nature,5,druid_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/druid_upg_l.json,910,0,0,0,0,0,0,0
-druid_upg_alt,nature,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/druid_upg_alt_l.json,910,0,0,0,0,0,0,0
-qilin,nature,6,qilin_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/qilin_l.json,1200,0,0,0,0,0,0,0
-qilin_upg,nature,6,qilin_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/qilin_upg_l.json,1900,0,0,0,0,0,0,0
-qilin_upg_alt,nature,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/qilin_upg_alt_l.json,1900,0,0,0,0,0,0,0
-phoenix,nature,7,phoenix_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/phoenix_l.json,2900,0,0,0,1,0,0,0
-phoenix_upg,nature,7,phoenix_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/phoenix_upg_l.json,4800,0,0,0,2,0,0,0
-phoenix_upg_alt,nature,7,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/nature/phoenix_upg_alt_l.json,4800,0,0,0,2,0,0,0
-gnat,neutral,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/gnat_l.json,66,0,0,0,0,0,0,0
-pixie,neutral,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/pixie_l.json,100,0,0,0,0,0,0,0
-halfling,neutral,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/halfling_l.json,150,0,0,0,0,0,0,0
-peasant,neutral,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/peasant_l.json,150,0,0,0,0,0,0,0
-peasant_normal,neutral,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/peasant_normal_l.json,150,0,0,0,0,0,0,0
-undead_peasant,neutral,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/undead_peasant_l.json,200,0,0,0,0,0,0,0
-animated_armor,neutral,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/animated_armor_l.json,300,0,0,0,0,0,0,0
-gorilla,neutral,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/gorilla_l.json,300,0,0,0,0,0,0,0
-kitten_horn,neutral,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/kitten_horn_l.json,600,0,0,0,0,0,0,0
-primal_remnant,neutral,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/primal_remnant_l.json,600,0,0,0,0,0,0,0
-star_child,neutral,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/star_child_l.json,600,0,0,0,0,0,0,0
-unicorn,neutral,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/unicorn_l.json,600,0,0,0,0,0,0,0
-fairy_dragon,neutral,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/fairy_dragon_l.json,1000,0,0,0,0,0,0,0
-giant_frog,neutral,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/giant_frog_l.json,1000,0,0,0,0,0,0,0
-coatl,neutral,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/coatl_l.json,1600,0,0,0,0,0,0,0
-dragon_hunter,neutral,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/dragon_hunter_l.json,1600,0,0,0,0,0,0,0
-mech_guard,neutral,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/mech_guard_l.json,1600,0,0,0,0,0,0,0
-sentinel,neutral,7,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/sentinel_l.json,5000,0,0,0,0,0,0,0
-avatar,neutral,8,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/avatar_l.json,300,0,0,0,0,0,0,0
-avatar_nature,neutral,8,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/avatar_nature_l.json,300,0,0,0,0,0,0,0
-avatar_unfrozen,neutral,8,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/avatar_unfrozen_l.json,300,0,0,0,0,0,0,0
-lich_dragon,neutral,8,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/neutral/lich_dragon_l.json,30000,0,0,0,0,0,0,0
-skeleton,undead,1,skeleton_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/skeleton_l.json,35,0,0,0,0,0,0,0
-skeleton_upg,undead,1,skeleton_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/skeleton_upg_l.json,50,0,0,0,0,0,0,0
-skeleton_upg_alt,undead,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/skeleton_upg_alt_l.json,50,0,0,0,0,0,0,0
-flicker,undead,2,flicker_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/flicker_l.json,100,0,0,0,0,0,0,0
-flicker_upg,undead,2,flicker_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/flicker_upg_l.json,130,0,0,0,0,0,0,0
-flicker_upg_alt,undead,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/flicker_upg_alt_l.json,130,0,0,0,0,0,0,0
-pet,undead,3,pet_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/pet_l.json,120,0,0,0,0,0,0,0
-pet_upg,undead,3,pet_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/pet_upg_l.json,160,0,0,0,0,0,0,0
-pet_upg_alt,undead,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/pet_upg_alt_l.json,160,0,0,0,0,0,0,0
-graverobber,undead,4,graverobber_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/graverobber_l.json,240,0,0,0,0,0,0,0
-graverobber_upg,undead,4,graverobber_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/graverobber_upg_l.json,340,0,0,0,0,0,0,0
-graverobber_upg_alt,undead,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/graverobber_upg_alt_l.json,340,0,0,0,0,0,0,0
-lich,undead,5,lich_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/lich_l.json,320,0,0,0,0,0,0,0
-lich_upg,undead,5,lich_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/lich_upg_l.json,460,0,0,0,0,0,0,0
-lich_upg_alt,undead,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/lich_upg_alt_l.json,460,0,0,0,0,0,0,0
-avatar_of_war,undead,6,avatar_of_war_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/avatar_of_war_l.json,700,0,0,0,0,0,0,0
-avatar_of_war_upg,undead,6,avatar_of_war_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/avatar_of_war_upg_l.json,1100,0,0,0,0,0,0,0
-avatar_of_war_upg_alt,undead,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/avatar_of_war_upg_alt_l.json,1100,0,0,0,0,0,0,0
-vampire,undead,7,vampire_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/vampire_l.json,1200,0,0,0,0,1,0,0
-vampire_upg,undead,7,vampire_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/vampire_upg_l.json,2000,0,0,0,0,2,0,0
-vampire_upg_alt,undead,7,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/undead/vampire_upg_alt_l.json,2000,0,0,0,0,2,0,0
-lesser_eldritch,unfrozen,1,lesser_eldritch_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/lesser_eldritch_l.json,80,0,0,0,0,0,0,0
-lesser_eldritch_upg,unfrozen,1,lesser_eldritch_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/lesser_eldritch_upg_l.json,100,0,0,0,0,0,0,0
-lesser_eldritch_upg_alt,unfrozen,1,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/lesser_eldritch_upg_alt_l.json,100,0,0,0,0,0,0,0
-unfrozen_cultist,unfrozen,2,unfrozen_cultist_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/unfrozen_cultist_l.json,165,0,0,0,0,0,0,0
-unfrozen_cultist_upg,unfrozen,2,unfrozen_cultist_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/unfrozen_cultist_upg_l.json,220,0,0,0,0,0,0,0
-unfrozen_cultist_upg_alt,unfrozen,2,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/unfrozen_cultist_upg_alt_l.json,220,0,0,0,0,0,0,0
-frostworm_rider,unfrozen,3,frostworm_rider_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/frostworm_rider_l.json,195,0,0,0,0,0,0,0
-frostworm_rider_upg,unfrozen,3,frostworm_rider_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/frostworm_rider_upg_l.json,270,0,0,0,0,0,0,0
-frostworm_rider_upg_alt,unfrozen,3,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/frostworm_rider_upg_alt_l.json,270,0,0,0,0,0,0,0
-eldritch_flyer,unfrozen,4,eldritch_flyer_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/eldritch_flyer_l.json,450,0,0,0,0,0,0,0
-eldritch_flyer_upg,unfrozen,4,eldritch_flyer_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/eldritch_flyer_upg_l.json,630,0,0,0,0,0,0,0
-eldritch_flyer_upg_alt,unfrozen,4,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/eldritch_flyer_upg_alt_l.json,630,0,0,0,0,0,0,0
-succubus,unfrozen,5,succubus_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/succubus_l.json,580,0,0,0,0,0,0,0
-succubus_upg,unfrozen,5,succubus_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/succubus_upg_l.json,840,0,0,0,0,0,0,0
-succubus_upg_alt,unfrozen,5,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/succubus_upg_alt_l.json,840,0,0,0,0,0,0,0
-arbitrator,unfrozen,6,arbitrator_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/arbitrator_l.json,1200,0,0,0,0,0,0,0
-arbitrator_upg,unfrozen,6,arbitrator_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/arbitrator_upg_l.json,1900,0,0,0,0,0,0,0
-arbitrator_upg_alt,unfrozen,6,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/arbitrator_upg_alt_l.json,1900,0,0,0,0,0,0,0
-unspeakable,unfrozen,7,unspeakable_upg,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/unspeakable_l.json,2500,0,0,0,0,1,0,0
-unspeakable_upg,unfrozen,7,unspeakable_upg_alt,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/unspeakable_upg_l.json,4200,0,0,0,0,2,0,0
-unspeakable_upg_alt,unfrozen,7,,C:\Users\BB BOBBY\Documents\GitHub\olden_era_build_project\olden_db\Core\DB\units\units_logics\unit_logic.zip!unit_logic/unfrozen/unspeakable_upg_alt_l.json,4200,0,0,0,0,2,0,0
+trick_demon,demon,1,trick_demon_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/trick_demon_l.json,90,0,0,0,0,0,0,0
+trick_demon_upg,demon,1,trick_demon_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/trick_demon_upg_l.json,110,0,0,0,0,0,0,0
+trick_demon_upg_alt,demon,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/trick_demon_upg_alt_l.json,110,0,0,0,0,0,0,0
+locust,demon,2,locust_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/locust_l.json,130,0,0,0,0,0,0,0
+locust_upg,demon,2,locust_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/locust_upg_l.json,170,0,0,0,0,0,0,0
+locust_upg_alt,demon,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/locust_upg_alt_l.json,170,0,0,0,0,0,0,0
+wasp,demon,3,wasp_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/wasp_l.json,255,0,0,0,0,0,0,0
+wasp_upg,demon,3,wasp_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/wasp_upg_l.json,350,0,0,0,0,0,0,0
+wasp_upg_alt,demon,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/wasp_upg_alt_l.json,350,0,0,0,0,0,0,0
+jaw,demon,4,jaw_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/jaw_l.json,280,0,0,0,0,0,0,0
+jaw_upg,demon,4,jaw_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/jaw_upg_l.json,390,0,0,0,0,0,0,0
+jaw_upg_alt,demon,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/jaw_upg_alt_l.json,390,0,0,0,0,0,0,0
+lava_larva,demon,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/lava_larva_l.json,100,0,0,0,0,0,0,0
+godslayer,demon,5,godslayer_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/godslayer_l.json,750,0,0,0,0,0,0,0
+godslayer_upg,demon,5,godslayer_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/godslayer_upg_l.json,1080,0,0,0,0,0,0,0
+godslayer_upg_alt,demon,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/godslayer_upg_alt_l.json,1080,0,0,0,0,0,0,0
+olgoi,demon,6,olgoi_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/olgoi_l.json,1200,0,0,0,0,0,0,0
+olgoi_upg,demon,6,olgoi_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/olgoi_upg_l.json,1900,0,0,0,0,0,0,0
+olgoi_upg_alt,demon,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/olgoi_upg_alt_l.json,1900,0,0,0,0,0,0,0
+hive_queen,demon,7,hive_queen_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/hive_queen_l.json,2100,0,0,0,1,0,0,0
+hive_queen_upg,demon,7,hive_queen_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/hive_queen_upg_l.json,3400,0,0,0,2,0,0,0
+hive_queen_upg_alt,demon,7,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/demons/hive_queen_upg_alt_l.json,3400,0,0,0,2,0,0,0
+trogl,dungeon,1,trogl_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/trogl_l.json,50,0,0,0,0,0,0,0
+trogl_upg,dungeon,1,trogl_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/trogl_upg_l.json,60,0,0,0,0,0,0,0
+trogl_upg_alt,dungeon,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/trogl_upg_alt_l.json,60,0,0,0,0,0,0,0
+assassin,dungeon,2,assassin_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/assassin_l.json,120,0,0,0,0,0,0,0
+assassin_upg,dungeon,2,assassin_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/assassin_upg_l.json,160,0,0,0,0,0,0,0
+assassin_upg_alt,dungeon,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/assassin_upg_alt_l.json,160,0,0,0,0,0,0,0
+blade_dancer,dungeon,3,blade_dancer_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/blade_dancer_l.json,165,0,0,0,0,0,0,0
+blade_dancer_upg,dungeon,3,blade_dancer_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/blade_dancer_upg_l.json,230,0,0,0,0,0,0,0
+blade_dancer_upg_alt,dungeon,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/blade_dancer_upg_alt_l.json,230,0,0,0,0,0,0,0
+minos,dungeon,4,minos_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/minos_l.json,380,0,0,0,0,0,0,0
+minos_upg,dungeon,4,minos_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/minos_upg_l.json,530,0,0,0,0,0,0,0
+minos_upg_alt,dungeon,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/minos_upg_alt_l.json,530,0,0,0,0,0,0,0
+medusa,dungeon,5,medusa_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/medusa_l.json,490,0,0,0,0,0,0,0
+medusa_upg,dungeon,5,medusa_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/medusa_upg_l.json,700,0,0,0,0,0,0,0
+medusa_upg_alt,dungeon,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/medusa_upg_alt_l.json,700,0,0,0,0,0,0,0
+hydra,dungeon,6,hydra_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/hydra_l.json,1200,0,0,0,0,0,0,0
+hydra_upg,dungeon,6,hydra_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/hydra_upg_l.json,1800,0,0,0,0,0,0,0
+hydra_upg_alt,dungeon,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/hydra_upg_alt_l.json,1800,0,0,0,0,0,0,0
+black_dragon,dungeon,7,black_dragon_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/black_dragon_l.json,3000,0,0,1,0,0,0,0
+black_dragon_upg,dungeon,7,black_dragon_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/black_dragon_upg_l.json,5000,0,0,2,0,0,0,0
+black_dragon_upg_alt,dungeon,7,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/dungeon/black_dragon_upg_alt_l.json,5000,0,0,2,0,0,0,0
+esquire,human,1,esquire_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/esquire_l.json,85,0,0,0,0,0,0,0
+esquire_upg,human,1,esquire_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/esquire_upg_l.json,110,0,0,0,0,0,0,0
+esquire_upg_alt,human,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/esquire_upg_alt_l.json,110,0,0,0,0,0,0,0
+crossbowman,human,2,crossbowman_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/crossbowman_l.json,95,0,0,0,0,0,0,0
+crossbowman_upg,human,2,crossbowman_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/crossbowman_upg_l.json,130,0,0,0,0,0,0,0
+crossbowman_upg_alt,human,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/crossbowman_upg_alt_l.json,130,0,0,0,0,0,0,0
+griffin,human,3,griffin_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/griffin_l.json,270,0,0,0,0,0,0,0
+griffin_upg,human,3,griffin_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/griffin_upg_l.json,360,0,0,0,0,0,0,0
+griffin_upg_alt,human,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/griffin_upg_alt_l.json,360,0,0,0,0,0,0,0
+lightweaver,human,4,lightweaver_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/lightweaver_l.json,310,0,0,0,0,0,0,0
+lightweaver_upg,human,4,lightweaver_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/lightweaver_upg_l.json,440,0,0,0,0,0,0,0
+lightweaver_upg_alt,human,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/lightweaver_upg_alt_l.json,440,0,0,0,0,0,0,0
+sunlight_cavalry,human,5,sunlight_cavalry_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/sunlight_cavalry_l.json,850,0,0,0,0,0,0,0
+sunlight_cavalry_upg,human,5,sunlight_cavalry_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/sunlight_cavalry_upg_l.json,1220,0,0,0,0,0,0,0
+sunlight_cavalry_upg_alt,human,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/sunlight_cavalry_upg_alt_l.json,1220,0,0,0,0,0,0,0
+inquisitor,human,6,inquisitor_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/inquisitor_l.json,1000,0,0,0,0,0,0,0
+inquisitor_upg,human,6,inquisitor_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/inquisitor_upg_l.json,1500,0,0,0,0,0,0,0
+inquisitor_upg_alt,human,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/inquisitor_upg_alt_l.json,1500,0,0,0,0,0,0,0
+angel,human,7,angel_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/angel_l.json,2400,0,0,1,0,0,0,0
+angel_upg,human,7,angel_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/angel_upg_l.json,4000,0,0,2,0,0,0,0
+angel_upg_alt,human,7,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/humans/angel_upg_alt_l.json,4000,0,0,2,0,0,0,0
+elf_tracker,nature,1,elf_tracker_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/elf_tracker_l.json,115,0,0,0,0,0,0,0
+elf_tracker_upg,nature,1,elf_tracker_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/elf_tracker_upg_l.json,150,0,0,0,0,0,0,0
+elf_tracker_upg_alt,nature,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/elf_tracker_upg_alt_l.json,150,0,0,0,0,0,0,0
+twinkle,nature,2,twinkle_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/twinkle_l.json,185,0,0,0,0,0,0,0
+twinkle_upg,nature,2,twinkle_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/twinkle_upg_l.json,250,0,0,0,0,0,0,0
+twinkle_upg_alt,nature,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/twinkle_upg_alt_l.json,250,0,0,0,0,0,0,0
+ent,nature,3,ent_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/ent_l.json,220,0,0,0,0,0,0,0
+ent_upg,nature,3,ent_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/ent_upg_l.json,300,0,0,0,0,0,0,0
+ent_upg_alt,nature,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/ent_upg_alt_l.json,300,0,0,0,0,0,0,0
+aqualotl,nature,4,aqualotl_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/aqualotl_l.json,360,0,0,0,0,0,0,0
+aqualotl_upg,nature,4,aqualotl_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/aqualotl_upg_l.json,510,0,0,0,0,0,0,0
+aqualotl_upg_alt,nature,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/aqualotl_upg_alt_l.json,510,0,0,0,0,0,0,0
+druid,nature,5,druid_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/druid_l.json,640,0,0,0,0,0,0,0
+druid_upg,nature,5,druid_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/druid_upg_l.json,910,0,0,0,0,0,0,0
+druid_upg_alt,nature,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/druid_upg_alt_l.json,910,0,0,0,0,0,0,0
+qilin,nature,6,qilin_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/qilin_l.json,1200,0,0,0,0,0,0,0
+qilin_upg,nature,6,qilin_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/qilin_upg_l.json,1900,0,0,0,0,0,0,0
+qilin_upg_alt,nature,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/qilin_upg_alt_l.json,1900,0,0,0,0,0,0,0
+phoenix,nature,7,phoenix_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/phoenix_l.json,2900,0,0,0,1,0,0,0
+phoenix_upg,nature,7,phoenix_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/phoenix_upg_l.json,4800,0,0,0,2,0,0,0
+phoenix_upg_alt,nature,7,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/nature/phoenix_upg_alt_l.json,4800,0,0,0,2,0,0,0
+gnat,neutral,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/gnat_l.json,66,0,0,0,0,0,0,0
+pixie,neutral,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/pixie_l.json,100,0,0,0,0,0,0,0
+halfling,neutral,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/halfling_l.json,150,0,0,0,0,0,0,0
+peasant,neutral,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/peasant_l.json,150,0,0,0,0,0,0,0
+peasant_normal,neutral,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/peasant_normal_l.json,150,0,0,0,0,0,0,0
+undead_peasant,neutral,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/undead_peasant_l.json,200,0,0,0,0,0,0,0
+animated_armor,neutral,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/animated_armor_l.json,300,0,0,0,0,0,0,0
+gorilla,neutral,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/gorilla_l.json,300,0,0,0,0,0,0,0
+kitten_horn,neutral,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/kitten_horn_l.json,600,0,0,0,0,0,0,0
+primal_remnant,neutral,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/primal_remnant_l.json,600,0,0,0,0,0,0,0
+star_child,neutral,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/star_child_l.json,600,0,0,0,0,0,0,0
+unicorn,neutral,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/unicorn_l.json,600,0,0,0,0,0,0,0
+fairy_dragon,neutral,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/fairy_dragon_l.json,1000,0,0,0,0,0,0,0
+giant_frog,neutral,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/giant_frog_l.json,1000,0,0,0,0,0,0,0
+coatl,neutral,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/coatl_l.json,1600,0,0,0,0,0,0,0
+dragon_hunter,neutral,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/dragon_hunter_l.json,1600,0,0,0,0,0,0,0
+mech_guard,neutral,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/mech_guard_l.json,1600,0,0,0,0,0,0,0
+sentinel,neutral,7,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/sentinel_l.json,5000,0,0,0,0,0,0,0
+avatar,neutral,8,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/avatar_l.json,300,0,0,0,0,0,0,0
+avatar_nature,neutral,8,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/avatar_nature_l.json,300,0,0,0,0,0,0,0
+avatar_unfrozen,neutral,8,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/avatar_unfrozen_l.json,300,0,0,0,0,0,0,0
+lich_dragon,neutral,8,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/neutral/lich_dragon_l.json,30000,0,0,0,0,0,0,0
+skeleton,undead,1,skeleton_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/skeleton_l.json,35,0,0,0,0,0,0,0
+skeleton_upg,undead,1,skeleton_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/skeleton_upg_l.json,50,0,0,0,0,0,0,0
+skeleton_upg_alt,undead,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/skeleton_upg_alt_l.json,50,0,0,0,0,0,0,0
+flicker,undead,2,flicker_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/flicker_l.json,100,0,0,0,0,0,0,0
+flicker_upg,undead,2,flicker_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/flicker_upg_l.json,130,0,0,0,0,0,0,0
+flicker_upg_alt,undead,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/flicker_upg_alt_l.json,130,0,0,0,0,0,0,0
+pet,undead,3,pet_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/pet_l.json,120,0,0,0,0,0,0,0
+pet_upg,undead,3,pet_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/pet_upg_l.json,160,0,0,0,0,0,0,0
+pet_upg_alt,undead,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/pet_upg_alt_l.json,160,0,0,0,0,0,0,0
+graverobber,undead,4,graverobber_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/graverobber_l.json,240,0,0,0,0,0,0,0
+graverobber_upg,undead,4,graverobber_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/graverobber_upg_l.json,340,0,0,0,0,0,0,0
+graverobber_upg_alt,undead,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/graverobber_upg_alt_l.json,340,0,0,0,0,0,0,0
+lich,undead,5,lich_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/lich_l.json,320,0,0,0,0,0,0,0
+lich_upg,undead,5,lich_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/lich_upg_l.json,460,0,0,0,0,0,0,0
+lich_upg_alt,undead,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/lich_upg_alt_l.json,460,0,0,0,0,0,0,0
+avatar_of_war,undead,6,avatar_of_war_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/avatar_of_war_l.json,700,0,0,0,0,0,0,0
+avatar_of_war_upg,undead,6,avatar_of_war_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/avatar_of_war_upg_l.json,1100,0,0,0,0,0,0,0
+avatar_of_war_upg_alt,undead,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/avatar_of_war_upg_alt_l.json,1100,0,0,0,0,0,0,0
+vampire,undead,7,vampire_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/vampire_l.json,1200,0,0,0,0,1,0,0
+vampire_upg,undead,7,vampire_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/vampire_upg_l.json,2000,0,0,0,0,2,0,0
+vampire_upg_alt,undead,7,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/undead/vampire_upg_alt_l.json,2000,0,0,0,0,2,0,0
+lesser_eldritch,unfrozen,1,lesser_eldritch_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/lesser_eldritch_l.json,80,0,0,0,0,0,0,0
+lesser_eldritch_upg,unfrozen,1,lesser_eldritch_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/lesser_eldritch_upg_l.json,100,0,0,0,0,0,0,0
+lesser_eldritch_upg_alt,unfrozen,1,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/lesser_eldritch_upg_alt_l.json,100,0,0,0,0,0,0,0
+unfrozen_cultist,unfrozen,2,unfrozen_cultist_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/unfrozen_cultist_l.json,165,0,0,0,0,0,0,0
+unfrozen_cultist_upg,unfrozen,2,unfrozen_cultist_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/unfrozen_cultist_upg_l.json,220,0,0,0,0,0,0,0
+unfrozen_cultist_upg_alt,unfrozen,2,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/unfrozen_cultist_upg_alt_l.json,220,0,0,0,0,0,0,0
+frostworm_rider,unfrozen,3,frostworm_rider_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/frostworm_rider_l.json,195,0,0,0,0,0,0,0
+frostworm_rider_upg,unfrozen,3,frostworm_rider_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/frostworm_rider_upg_l.json,270,0,0,0,0,0,0,0
+frostworm_rider_upg_alt,unfrozen,3,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/frostworm_rider_upg_alt_l.json,270,0,0,0,0,0,0,0
+eldritch_flyer,unfrozen,4,eldritch_flyer_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/eldritch_flyer_l.json,450,0,0,0,0,0,0,0
+eldritch_flyer_upg,unfrozen,4,eldritch_flyer_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/eldritch_flyer_upg_l.json,630,0,0,0,0,0,0,0
+eldritch_flyer_upg_alt,unfrozen,4,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/eldritch_flyer_upg_alt_l.json,630,0,0,0,0,0,0,0
+succubus,unfrozen,5,succubus_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/succubus_l.json,580,0,0,0,0,0,0,0
+succubus_upg,unfrozen,5,succubus_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/succubus_upg_l.json,840,0,0,0,0,0,0,0
+succubus_upg_alt,unfrozen,5,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/succubus_upg_alt_l.json,840,0,0,0,0,0,0,0
+arbitrator,unfrozen,6,arbitrator_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/arbitrator_l.json,1200,0,0,0,0,0,0,0
+arbitrator_upg,unfrozen,6,arbitrator_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/arbitrator_upg_l.json,1900,0,0,0,0,0,0,0
+arbitrator_upg_alt,unfrozen,6,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/arbitrator_upg_alt_l.json,1900,0,0,0,0,0,0,0
+unspeakable,unfrozen,7,unspeakable_upg,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/unspeakable_l.json,2500,0,0,0,0,1,0,0
+unspeakable_upg,unfrozen,7,unspeakable_upg_alt,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/unspeakable_upg_l.json,4200,0,0,0,0,2,0,0
+unspeakable_upg_alt,unfrozen,7,,Core/DB/units/units_logics/unit_logic.zip!unit_logic/unfrozen/unspeakable_upg_alt_l.json,4200,0,0,0,0,2,0,0

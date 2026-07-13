@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 from .constants import RESOURCE_NAMES
@@ -91,12 +91,36 @@ def _write_units(data: LoadedGameData, path: Path) -> None:
             "faction": unit.faction,
             "tier": unit.tier,
             "upgrade_sid": unit.upgrade_sid or "",
-            "source": unit.source,
+            "source": _normalize_unit_source(unit.source),
         }
         row.update(unit.cost.as_dict())
         rows.append(row)
 
     _write_rows(path, fieldnames, rows)
+
+
+def _normalize_unit_source(source: str) -> str:
+    """Return a stable logical asset path for a parsed unit source."""
+    archive_path, separator, member_path = source.partition("!")
+    normalized_archive = _logical_asset_path(archive_path)
+
+    if not separator:
+        return normalized_archive
+
+    normalized_member = str(PurePosixPath(member_path.replace("\\", "/")))
+    return f"{normalized_archive}!{normalized_member}"
+
+
+def _logical_asset_path(raw_path: str) -> str:
+    """Remove machine-specific parents while retaining the game asset path."""
+    path = PurePosixPath(raw_path.replace("\\", "/"))
+    parts = path.parts
+
+    for anchor in ("Core", "units_logics"):
+        if anchor in parts:
+            return str(PurePosixPath(*parts[parts.index(anchor):]))
+
+    return path.name
 
 
 def _write_dependency_graph(data: LoadedGameData, path: Path) -> None:
