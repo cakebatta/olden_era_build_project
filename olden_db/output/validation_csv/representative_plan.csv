@@ -1,0 +1,7 @@
+faction,target_sid,target_level,order_number,step_number,date,building_sid,building_level,individual_gold,individual_wood,individual_ore,individual_gemstones,individual_crystals,individual_mercury,individual_dust,individual_graal,cumulative_gold,cumulative_wood,cumulative_ore,cumulative_gemstones,cumulative_crystals,cumulative_mercury,cumulative_dust,cumulative_graal
+nature,Build_Tier_7,2,1,1,111,Build_Magic_Guild,1,2500,5,0,0,0,0,0,0,2500,5,0,0,0,0,0,0
+nature,Build_Tier_7,2,1,2,112,Build_Tier_3,1,1750,5,5,0,3,0,0,0,4250,10,5,0,3,0,0,0
+nature,Build_Tier_7,2,1,3,113,Build_Tier_4,1,2750,0,5,0,4,0,0,0,7000,10,10,0,7,0,0,0
+nature,Build_Tier_7,2,1,4,114,Build_Tier_6,1,5500,5,5,0,5,0,0,0,12500,15,15,0,12,0,0,0
+nature,Build_Tier_7,2,1,5,115,Build_Tier_7,1,15000,10,5,0,15,0,0,0,27500,25,20,0,27,0,0,0
+nature,Build_Tier_7,2,1,6,116,Build_Tier_7,2,17500,10,10,0,20,0,100,0,45000,35,30,0,47,0,100,0
