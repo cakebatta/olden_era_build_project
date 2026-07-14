@@ -4,6 +4,8 @@ from collections.abc import Callable
 
 from olden_db.desktop.presenters.planner_presenter import PlannerPresenter
 from olden_db.desktop.state import PlannerState
+from olden_db.models import BuildingLevel, ResourceCost
+from olden_db.planner import BuildPlan
 from olden_db.query import QueryError
 
 
@@ -43,6 +45,7 @@ class StubView:
         self.levels: tuple[int, ...] = ()
         self.generate_enabled = False
         self.handlers: dict[str, Callable[..., None]] = {}
+        self.clear_results_count = 0
 
     def set_event_handlers(
         self,
@@ -77,6 +80,27 @@ class StubView:
     def set_generate_enabled(self, enabled: bool) -> None:
         self.generate_enabled = enabled
 
+    def clear_results(self) -> None:
+        self.clear_results_count += 1
+
+    def show_target(self, building: BuildingLevel) -> None:
+        raise RuntimeError("Target display should not be used in selection validation")
+
+    def show_prerequisites(
+        self, prerequisites: tuple[BuildingLevel, ...]
+    ) -> None:
+        raise RuntimeError(
+            "Prerequisite display should not be used in selection validation"
+        )
+
+    def show_plan(
+        self, plan: BuildPlan, cumulative_cost: ResourceCost
+    ) -> None:
+        raise RuntimeError("Plan display should not be used in selection validation")
+
+    def show_error(self, message: str) -> None:
+        raise RuntimeError("Error display should not be used in selection validation")
+
 
 def main() -> None:
     service = StubQueryService()
@@ -96,10 +120,14 @@ def main() -> None:
         raise RuntimeError("Faction population was not deterministic")
     if view.generate_enabled:
         raise RuntimeError("Generate Plan was enabled before target completion")
+    if set(view.handlers) != {"faction", "building", "level", "generate"}:
+        raise RuntimeError("Presenter did not register all explicit view handlers")
 
     presenter.on_faction_changed("nature")
     if state != PlannerState(selected_faction="nature"):
         raise RuntimeError("Validated faction selection was not committed correctly")
+    if view.buildings != ("Build_Hall", "Build_Tier_4"):
+        raise RuntimeError("Building population was incorrect")
 
     presenter.on_building_changed("Build_Tier_4")
     if state != PlannerState(
@@ -107,18 +135,30 @@ def main() -> None:
         selected_building_sid="Build_Tier_4",
     ):
         raise RuntimeError("Validated building selection was not committed correctly")
+    if view.levels != (1, 2):
+        raise RuntimeError("Level population was incorrect")
+    if view.generate_enabled:
+        raise RuntimeError("Generate Plan enabled before level selection")
 
     presenter.on_level_changed(2)
     if not state.has_complete_target or not view.generate_enabled:
         raise RuntimeError("Complete target did not enable Generate Plan")
 
+    presenter.on_building_changed("Build_Hall")
+    if state.selected_level is not None or view.generate_enabled:
+        raise RuntimeError(
+            "Changing building did not clear level or disable Generate Plan"
+        )
+
+    presenter.on_level_changed(3)
     presenter.on_faction_changed("demon")
-    presenter.on_building_changed("Build_Bank")
-    presenter.on_level_changed(1)
+    if state != PlannerState(selected_faction="demon") or view.generate_enabled:
+        raise RuntimeError("Changing faction did not clear downstream state")
+
     validated_state = PlannerState(
-        selected_faction=state.selected_faction,
-        selected_building_sid=state.selected_building_sid,
-        selected_level=state.selected_level,
+        selected_faction="demon",
+        selected_building_sid=None,
+        selected_level=None,
     )
 
     service.rejected_factions.add("invalid_faction")
@@ -140,8 +180,12 @@ def main() -> None:
         )
 
     print("Desktop target-selection validation completed successfully.")
+    print("Selector population was deterministic.")
+    print("Downstream state reset rules were preserved.")
+    print("Generate Plan enablement matched target completeness.")
     print("Rejected selections were not retained in PlannerState.")
     print("Negative Query Layer paths kept Generate Plan disabled.")
+    print("Expanded result-view contract remained unused by selection tests.")
     print("Presenter logic was validated without live tkinter widgets.")
 
 
