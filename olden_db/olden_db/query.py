@@ -24,7 +24,7 @@ class UnknownBuildingError(QueryError):
 class PlanningQueryService:
     """Stable public interface for deterministic building-planning queries."""
 
-    data: LoadedGameData
+    _data: LoadedGameData
 
     @classmethod
     def from_default_game_data(cls) -> "PlanningQueryService":
@@ -44,9 +44,19 @@ class PlanningQueryService:
     def get_prerequisites(self, faction: str, sid: str, level: int) -> tuple[BuildingLevel, ...]:
         city = self._get_city(faction)
         building = self.get_building(faction, sid, level)
-        return tuple(city.buildings[key] for key in sorted(building.prerequisites, key=lambda item: (item.sid, item.level)))
+        return tuple(
+            city.buildings[key]
+            for key in sorted(building.prerequisites, key=lambda item: (item.sid, item.level))
+        )
 
-    def generate_build_plan(self, faction: str, sid: str, level: int, *, starting_date: GameDate = GameDate(1, 1, 1)) -> BuildPlan:
+    def generate_build_plan(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+        *,
+        starting_date: GameDate = GameDate(1, 1, 1),
+    ) -> BuildPlan:
         city, graph = self._build_graph(faction, sid, level)
         order = next(iter_topological_orders(graph))
         return plan_build_order(city, graph, order, starting_date=starting_date)
@@ -54,7 +64,14 @@ class PlanningQueryService:
     def get_cumulative_cost(self, faction: str, sid: str, level: int) -> ResourceCost:
         return self.generate_build_plan(faction, sid, level).total_cost
 
-    def enumerate_build_orders(self, faction: str, sid: str, level: int, *, max_orders: int | None = None) -> tuple[tuple[BuildingKey, ...], ...]:
+    def enumerate_build_orders(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+        *,
+        max_orders: int | None = None,
+    ) -> tuple[tuple[BuildingKey, ...], ...]:
         _, graph = self._build_graph(faction, sid, level)
         return tuple(iter_topological_orders(graph, max_orders=max_orders))
 
@@ -62,7 +79,7 @@ class PlanningQueryService:
         if not faction:
             raise QueryError("faction cannot be empty")
         try:
-            return self.data.cities.city(faction)
+            return self._data.cities.city(faction)
         except KeyError as exc:
             raise UnknownFactionError(f"Unknown faction: {faction!r}") from exc
 
