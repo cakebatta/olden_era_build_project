@@ -52,6 +52,102 @@ returned in ascending numeric order. Unknown factions raise
 - `get_cumulative_cost(...) -> ResourceCost`
 - `enumerate_build_orders(...) -> tuple[tuple[BuildingKey, ...], ...]`
 
+## Version 1.0 Public Contract
+
+### Public Modules
+
+Application clients may import the following supported Query Layer interfaces
+from `olden_db.query`:
+
+```python
+from olden_db.query import (
+    PlanningQueryService,
+    QueryError,
+    UnknownFactionError,
+    UnknownBuildingError,
+)
+```
+
+`olden_db.query` is the supported application-facing backend entry point for
+Version 1.0.
+
+### Stable Public Domain Contracts
+
+The Query Layer intentionally returns existing domain objects rather than
+introducing wrapper types or data-transfer objects.
+
+The following domain types are stable parts of the Version 1.0 public
+contract:
+
+- `BuildingKey`
+- `BuildingLevel`
+- `ResourceCost`
+- `GameDate`
+- `BuildPlan`
+- `BuildStep`
+
+Application clients may import these types from their existing defining
+modules:
+
+```python
+from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
+from olden_db.planner import BuildPlan, BuildStep, GameDate
+```
+
+These objects may be inspected through their documented fields and properties
+when returned by Query Layer operations.
+
+### Internal Backend Modules
+
+The following modules are backend implementation details and are not part of
+the Version 1.0 public API:
+
+- `olden_db.parser`
+- `olden_db.unit_parser`
+- `olden_db.database`
+- `olden_db.graph`
+- `olden_db.localization`
+- `olden_db.paths`
+
+Application clients must not import these modules directly. Their internal
+structure and implementation may change without constituting a public API
+change, provided the documented Query Layer contract continues to be
+satisfied.
+
+### Behavioral Guarantees
+
+Version 1.0 guarantees the following behavior:
+
+- Canonical SIDs are the authoritative identifiers.
+- Query operations are deterministic for identical game data and inputs.
+- `list_factions()` returns faction IDs in lexical order.
+- `list_buildings(faction)` returns unique building SIDs in lexical order.
+- `list_building_levels(faction, sid)` returns levels in ascending numeric
+  order.
+- Discovery methods return immutable tuples.
+- Invalid Query Layer requests raise documented Query Layer exceptions rather
+  than exposing lower-level backend lookup errors.
+- Canonical application initialization is available through
+  `PlanningQueryService.from_default_game_data()`.
+
+Localization remains a presentation concern and does not replace canonical
+identifiers.
+
+### Compatibility Policy
+
+The following are part of the Version 1.0 public API:
+
+- documented `PlanningQueryService` methods;
+- documented Query Layer exceptions;
+- documented stable domain contracts;
+- documented behavioral guarantees.
+
+Changes to any of these constitute public API changes and should receive
+explicit architectural review before implementation.
+
+Internal implementation details may evolve without review as public API
+changes, provided the documented Version 1.0 contract remains intact.
+
 ## Validation
 
 From the outer `olden_db/` directory:
