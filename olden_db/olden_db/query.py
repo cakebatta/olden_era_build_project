@@ -31,6 +31,27 @@ class PlanningQueryService:
         """Create a ready-to-use service from the canonical game data."""
         return cls(load_default_game_data())
 
+    def list_factions(self) -> tuple[str, ...]:
+        """Return canonical faction identifiers in deterministic order."""
+        return tuple(sorted(self._data.cities.cities))
+
+    def list_buildings(self, faction: str) -> tuple[str, ...]:
+        """Return unique canonical building SIDs for one faction."""
+        city = self._get_city(faction)
+        return tuple(sorted({key.sid for key in city.buildings}))
+
+    def list_building_levels(self, faction: str, sid: str) -> tuple[int, ...]:
+        """Return valid levels for one canonical building SID."""
+        city = self._get_city(faction)
+        if not sid:
+            raise QueryError("sid cannot be empty")
+        levels = tuple(sorted(key.level for key in city.buildings if key.sid == sid))
+        if not levels:
+            raise UnknownBuildingError(
+                f"Unknown building SID: faction={faction!r}, sid={sid!r}"
+            )
+        return levels
+
     def get_building(self, faction: str, sid: str, level: int) -> BuildingLevel:
         city = self._get_city(faction)
         key = self._make_key(faction, sid, level)
