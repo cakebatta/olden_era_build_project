@@ -17,74 +17,173 @@ def main() -> None:
     city, plan, keys = _fixture()
     city_snapshot = dict(city.buildings)
     plan_snapshot = plan
+    through = GameDate(1, 4, 1)
 
-    first = calculate_recruitment_stock(
+    canonical = calculate_recruitment_stock(
         city,
         plan,
-        through_date=GameDate(1, 4, 1),
+        through_date=through,
     )
-    second = calculate_recruitment_stock(
+    canonical_starting = frozenset(
+        key
+        for key, building in city.buildings.items()
+        if building.constructed_on_start
+    )
+    explicit_canonical = calculate_recruitment_stock(
         city,
         plan,
-        through_date=GameDate(1, 4, 1),
+        through_date=through,
+        starting_buildings=canonical_starting,
     )
-    if first != second:
-        raise RuntimeError("Recruitment stock was not deterministic")
+    if canonical != explicit_canonical:
+        raise RuntimeError(
+            "Explicit canonical starting set did not match default behavior"
+        )
 
-    dwelling_a = keys["dwelling_a"]
-    dwelling_b = keys["dwelling_b"]
-    dwelling_c = keys["dwelling_c"]
+    empty = calculate_recruitment_stock(
+        city,
+        plan,
+        through_date=through,
+        starting_buildings=frozenset(),
+    )
+    if empty == canonical:
+        raise RuntimeError("Explicitly empty starting state matched canonical state")
+    _expect(canonical, keys["dwelling_c"], GameDate(1, 1, 1), 2)
+    _expect(empty, keys["dwelling_c"], GameDate(1, 1, 1), 0)
 
-    _expect(first, dwelling_a, GameDate(1, 1, 1), 5)
-    _expect(first, dwelling_b, GameDate(1, 1, 1), 0)
-    _expect(first, dwelling_c, GameDate(1, 1, 1), 2)
+    added_dwelling = calculate_recruitment_stock(
+        city,
+        plan,
+        through_date=through,
+        starting_buildings=frozenset(
+            canonical_starting | {keys["dwelling_b"]}
+        ),
+    )
+    _expect(added_dwelling, keys["dwelling_b"], GameDate(1, 1, 1), 3)
+    _expect(added_dwelling, keys["dwelling_b"], GameDate(1, 2, 1), 6)
 
-    _expect(first, dwelling_a, GameDate(1, 2, 1), 10)
-    _expect(first, dwelling_c, GameDate(1, 2, 1), 4)
-    _expect(first, dwelling_b, GameDate(1, 2, 2), 3)
+    _check_removed_starting_wall()
+    _check_invalid_starting_keys(city, plan)
 
-    _expect(first, dwelling_a, GameDate(1, 3, 1), 17)
-    _expect(first, dwelling_b, GameDate(1, 3, 1), 7)
-    _expect(first, dwelling_c, GameDate(1, 3, 1), 7)
+    repeated = calculate_recruitment_stock(
+        city,
+        plan,
+        through_date=through,
+        starting_buildings=frozenset(),
+    )
+    if repeated != empty:
+        raise RuntimeError("Explicit starting-state calculation was not deterministic")
 
-    _expect(first, dwelling_a, GameDate(1, 4, 1), 27)
-    _expect(first, dwelling_b, GameDate(1, 4, 1), 13)
-    _expect(first, dwelling_c, GameDate(1, 4, 1), 11)
-
-    expected_daily_entries = (
-        GameDate(1, 4, 1).day_index
-        - plan.starting_date.day_index
-        + 1
-    ) * 3
-    if len(first.entries) != expected_daily_entries:
-        raise RuntimeError("Not every dwelling was tracked on every date")
+    _check_original_growth_rules(canonical, keys)
 
     try:
-        first.entries[0].available = 999
+        canonical.entries[0].available = 999
     except (FrozenInstanceError, AttributeError):
         pass
     else:
         raise RuntimeError("Dwelling stock entry was mutable")
 
-    try:
-        first.entries = ()
-    except (FrozenInstanceError, AttributeError):
-        pass
-    else:
-        raise RuntimeError("Recruitment stock result was mutable")
-
     if city.buildings != city_snapshot or plan != plan_snapshot:
         raise RuntimeError("Stock calculation mutated canonical inputs")
 
     print("Recruitment stock validation completed successfully.")
-    print("Initial stock was granted on dwelling availability.")
-    print("Weekly growth was granted only to previously built dwellings.")
-    print("Wall modifiers affected later weekly grants, not same-day grants.")
-    print("Fractional wall-modified growth rounded down.")
-    print("Unrecruited stock accumulated across weeks.")
-    print("Multiple dwellings were tracked independently on every date.")
+    print("Default calculation preserved canonical starting-state behavior.")
+    print("Explicit canonical starting set matched the default calculation.")
+    print("Explicitly empty starting state remained distinct from None.")
+    print("Scenario-added dwellings received initial stock and later growth.")
+    print("Removed starting walls affected only later post-construction weeks.")
+    print("Unknown and cross-faction starting keys were rejected.")
+    print("Existing timing, rounding, accumulation, and multi-dwelling rules passed.")
     print("Repeated calculations were deterministic.")
     print("Results and source inputs remained immutable.")
+
+
+def _check_original_growth_rules(stock, keys) -> None:
+    _expect(stock, keys["dwelling_a"], GameDate(1, 1, 1), 5)
+    _expect(stock, keys["dwelling_b"], GameDate(1, 1, 1), 0)
+    _expect(stock, keys["dwelling_c"], GameDate(1, 1, 1), 2)
+    _expect(stock, keys["dwelling_a"], GameDate(1, 2, 1), 10)
+    _expect(stock, keys["dwelling_b"], GameDate(1, 2, 2), 3)
+    _expect(stock, keys["dwelling_a"], GameDate(1, 3, 1), 17)
+    _expect(stock, keys["dwelling_b"], GameDate(1, 3, 1), 7)
+    _expect(stock, keys["dwelling_c"], GameDate(1, 3, 1), 7)
+    _expect(stock, keys["dwelling_a"], GameDate(1, 4, 1), 27)
+    _expect(stock, keys["dwelling_b"], GameDate(1, 4, 1), 13)
+    _expect(stock, keys["dwelling_c"], GameDate(1, 4, 1), 11)
+
+
+def _check_removed_starting_wall() -> None:
+    faction = "undead"
+    dwelling = BuildingKey(faction, "Build_Tier_1", 1)
+    wall = BuildingKey(faction, "Build_Wall", 2)
+    family = _family(faction, 1, dwelling.sid, 5)
+
+    city = FactionCity(faction=faction, city_id="undead_test")
+    city.add_building(
+        _building(
+            dwelling,
+            family,
+            constructed_on_start=True,
+        )
+    )
+    city.add_building(
+        _building(
+            wall,
+            constructed_on_start=True,
+        )
+    )
+    city_snapshot = dict(city.buildings)
+
+    plan = BuildPlan(
+        faction=faction,
+        target=wall,
+        order_number=1,
+        steps=(
+            _step(1, GameDate(1, 2, 2), wall),
+        ),
+        total_cost=ResourceCost(),
+        starting_date=GameDate(1, 1, 1),
+    )
+
+    effective = frozenset({dwelling})
+    stock = calculate_recruitment_stock(
+        city,
+        plan,
+        through_date=GameDate(1, 3, 1),
+        starting_buildings=effective,
+    )
+    _expect(stock, dwelling, GameDate(1, 1, 1), 5)
+    _expect(stock, dwelling, GameDate(1, 2, 1), 10)
+    _expect(stock, dwelling, GameDate(1, 3, 1), 17)
+
+    if city.buildings != city_snapshot:
+        raise RuntimeError("Removed-wall calculation mutated canonical city")
+
+
+def _check_invalid_starting_keys(city, plan) -> None:
+    unknown = BuildingKey(city.faction, "Build_Unknown", 1)
+    try:
+        calculate_recruitment_stock(
+            city,
+            plan,
+            starting_buildings=frozenset({unknown}),
+        )
+    except ValueError:
+        pass
+    else:
+        raise RuntimeError("Unknown starting building was not rejected")
+
+    cross_faction = BuildingKey("other", "Build_Tier_1", 1)
+    try:
+        calculate_recruitment_stock(
+            city,
+            plan,
+            starting_buildings=frozenset({cross_faction}),
+        )
+    except ValueError:
+        pass
+    else:
+        raise RuntimeError("Cross-faction starting building was not rejected")
 
 
 def _expect(stock, dwelling: BuildingKey, date: GameDate, expected: int) -> None:

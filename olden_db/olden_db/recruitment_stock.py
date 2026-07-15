@@ -59,8 +59,12 @@ def calculate_recruitment_stock(
     plan: BuildPlan,
     *,
     through_date: GameDate | None = None,
+    starting_buildings: frozenset[BuildingKey] | None = None,
 ) -> RecruitmentStock:
     """Calculate deterministic daily creature availability without recruitment.
+
+    ``starting_buildings=None`` uses canonical ``constructed_on_start`` values.
+    An explicitly supplied frozenset is authoritative, including an empty set.
 
     Weekly additions occur before construction on the first day of each week.
     A dwelling or wall built that day therefore does not affect that day's
@@ -73,6 +77,11 @@ def calculate_recruitment_stock(
         raise TypeError("plan must be a BuildPlan")
     if through_date is not None and not isinstance(through_date, GameDate):
         raise TypeError("through_date must be a GameDate or None")
+    if starting_buildings is not None and not isinstance(
+        starting_buildings,
+        frozenset,
+    ):
+        raise TypeError("starting_buildings must be a frozenset or None")
     if city.faction != plan.faction:
         raise ValueError("city faction does not match plan faction")
 
@@ -80,13 +89,10 @@ def calculate_recruitment_stock(
     if end_date.day_index < plan.starting_date.day_index:
         raise ValueError("through_date cannot precede plan starting date")
 
+    effective_starting = _resolve_starting_buildings(city, starting_buildings)
     definitions = _collect_dwellings(city)
     construction_by_date = _construction_by_date(city, plan)
-    available_buildings = {
-        key
-        for key, building in city.buildings.items()
-        if building.constructed_on_start
-    }
+    available_buildings = set(effective_starting)
     stock = {definition.key: 0 for definition in definitions}
     activated: set[BuildingKey] = set()
 
@@ -131,6 +137,31 @@ def calculate_recruitment_stock(
         through_date=end_date,
         entries=tuple(entries),
     )
+
+
+def _resolve_starting_buildings(
+    city: FactionCity,
+    starting_buildings: frozenset[BuildingKey] | None,
+) -> frozenset[BuildingKey]:
+    if starting_buildings is None:
+        return frozenset(
+            key
+            for key, building in city.buildings.items()
+            if building.constructed_on_start
+        )
+
+    for key in starting_buildings:
+        if not isinstance(key, BuildingKey):
+            raise TypeError("starting_buildings must contain BuildingKey values")
+        if key.faction != city.faction:
+            raise ValueError(
+                f"Starting building faction {key.faction!r} does not match "
+                f"city faction {city.faction!r}: {key}"
+            )
+        if key not in city.buildings:
+            raise ValueError(f"Unknown starting building: {key}")
+
+    return starting_buildings
 
 
 def _collect_dwellings(city: FactionCity) -> tuple[_DwellingDefinition, ...]:
