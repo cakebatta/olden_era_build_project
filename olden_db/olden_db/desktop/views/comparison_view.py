@@ -1,10 +1,7 @@
 from __future__ import annotations
-from collections.abc import Callable
 import tkinter as tk
 from tkinter import ttk
 from olden_db.comparison import PlanComparison
-from olden_db.models import BuildingKey, BuildingLevel
-from olden_db.scenario import PlanningScenario
 from ..formatting import format_building_key, format_game_date, format_resource_cost
 
 class _Side(ttk.LabelFrame):
@@ -53,6 +50,8 @@ class ComparisonView(ttk.Frame):
         added='None' if not c.added_buildings else '\n'.join(format_building_key(x) for x in c.added_buildings); removed='None' if not c.removed_buildings else '\n'.join(format_building_key(x) for x in c.removed_buildings)
         summary='\n'.join((f'Identical: {"Yes" if c.identical else "No"}',f'Action-count delta: {c.action_delta}',f'Completion-date delta: {c.completion_date_delta}',f'Resource delta: {format_resource_cost(c.resource_delta)}','','Added buildings:',added,'','Removed buildings:',removed))
         self._replace(''); self._section('Left Plan',left); self._section('Right Plan',right); self._section('Comparison Summary',summary)
+    def show_decision_summary(self,observations:tuple[str,...])->None:
+        self._section('Decision Summary','\n'.join(f'{i}. {text}' for i,text in enumerate(observations,start=1)))
     def _compare(self):
         cb=self.handlers.get('on_compare'); cb() if cb else None
     def _replace(self,s): self.text.configure(state='normal'); self.text.delete('1.0','end'); self.text.insert('end',s); self.text.configure(state='disabled')
