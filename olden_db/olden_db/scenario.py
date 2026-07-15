@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .models import BuildingKey, FactionCity
+from .models import BuildingKey, BuildingLevel, FactionCity
 
 
 class ScenarioError(ValueError):
@@ -59,6 +59,23 @@ class PlanningScenario:
             "starting_building_overrides",
             tuple(sorted(overrides)),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class PrerequisiteStatus:
+    """Effective scenario status for one direct prerequisite building."""
+
+    building: BuildingLevel
+    available_at_start: bool
+    overridden: bool
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.building, BuildingLevel):
+            raise TypeError("building must be a BuildingLevel")
+        if type(self.available_at_start) is not bool:
+            raise TypeError("available_at_start must be a bool")
+        if type(self.overridden) is not bool:
+            raise TypeError("overridden must be a bool")
 
 
 def resolve_effective_starting_buildings(

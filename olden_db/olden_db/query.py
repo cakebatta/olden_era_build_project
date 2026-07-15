@@ -3,9 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .database import LoadedGameData, load_default_game_data
-from .graph import build_dependency_graph, iter_topological_orders
+from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
 from .planner import BuildPlan, GameDate, plan_build_order
+from .scenario import (
+    PlanningScenario,
+    PrerequisiteStatus,
+    resolve_effective_starting_buildings,
+)
 
 
 class QueryError(ValueError):
@@ -62,12 +67,48 @@ class PlanningQueryService:
                 f"Unknown building: faction={faction!r}, sid={sid!r}, level={level}"
             ) from exc
 
-    def get_prerequisites(self, faction: str, sid: str, level: int) -> tuple[BuildingLevel, ...]:
+    def get_prerequisites(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+    ) -> tuple[BuildingLevel, ...]:
         city = self._get_city(faction)
         building = self.get_building(faction, sid, level)
         return tuple(
             city.buildings[key]
-            for key in sorted(building.prerequisites, key=lambda item: (item.sid, item.level))
+            for key in sorted(
+                building.prerequisites,
+                key=lambda item: (item.sid, item.level),
+            )
+        )
+
+    def get_prerequisite_statuses(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+        *,
+        scenario: PlanningScenario | None = None,
+    ) -> tuple[PrerequisiteStatus, ...]:
+        """Return effective starting status for each direct prerequisite."""
+        city = self._get_city(faction)
+        building = self.get_building(faction, sid, level)
+        effective_starting = self._effective_starting_buildings(city, scenario)
+
+        return tuple(
+            PrerequisiteStatus(
+                building=city.buildings[key],
+                available_at_start=key in effective_starting,
+                overridden=(
+                    (key in effective_starting)
+                    != city.buildings[key].constructed_on_start
+                ),
+            )
+            for key in sorted(
+                building.prerequisites,
+                key=lambda item: (item.sid, item.level),
+            )
         )
 
     def generate_build_plan(
@@ -77,13 +118,26 @@ class PlanningQueryService:
         level: int,
         *,
         starting_date: GameDate = GameDate(1, 1, 1),
+        scenario: PlanningScenario | None = None,
     ) -> BuildPlan:
-        city, graph = self._build_graph(faction, sid, level)
+        city, graph = self._build_graph(faction, sid, level, scenario=scenario)
         order = next(iter_topological_orders(graph))
         return plan_build_order(city, graph, order, starting_date=starting_date)
 
-    def get_cumulative_cost(self, faction: str, sid: str, level: int) -> ResourceCost:
-        return self.generate_build_plan(faction, sid, level).total_cost
+    def get_cumulative_cost(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+        *,
+        scenario: PlanningScenario | None = None,
+    ) -> ResourceCost:
+        return self.generate_build_plan(
+            faction,
+            sid,
+            level,
+            scenario=scenario,
+        ).total_cost
 
     def enumerate_build_orders(
         self,
@@ -92,8 +146,9 @@ class PlanningQueryService:
         level: int,
         *,
         max_orders: int | None = None,
+        scenario: PlanningScenario | None = None,
     ) -> tuple[tuple[BuildingKey, ...], ...]:
-        _, graph = self._build_graph(faction, sid, level)
+        _, graph = self._build_graph(faction, sid, level, scenario=scenario)
         return tuple(iter_topological_orders(graph, max_orders=max_orders))
 
     def _get_city(self, faction: str) -> FactionCity:
@@ -104,10 +159,39 @@ class PlanningQueryService:
         except KeyError as exc:
             raise UnknownFactionError(f"Unknown faction: {faction!r}") from exc
 
-    def _build_graph(self, faction: str, sid: str, level: int):
+    def _build_graph(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+        *,
+        scenario: PlanningScenario | None = None,
+    ) -> tuple[FactionCity, DependencyGraph]:
         city = self._get_city(faction)
         building = self.get_building(faction, sid, level)
-        return city, build_dependency_graph(city, building.key)
+        starting_buildings = (
+            None
+            if scenario is None
+            else resolve_effective_starting_buildings(city, scenario)
+        )
+        return city, build_dependency_graph(
+            city,
+            building.key,
+            starting_buildings=starting_buildings,
+        )
+
+    @staticmethod
+    def _effective_starting_buildings(
+        city: FactionCity,
+        scenario: PlanningScenario | None,
+    ) -> frozenset[BuildingKey]:
+        if scenario is not None:
+            return resolve_effective_starting_buildings(city, scenario)
+        return frozenset(
+            key
+            for key, building in city.buildings.items()
+            if building.constructed_on_start
+        )
 
     @staticmethod
     def _make_key(faction: str, sid: str, level: int) -> BuildingKey:

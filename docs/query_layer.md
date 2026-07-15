@@ -8,7 +8,7 @@ implementation details.
 
 ## Responsibilities
 
-The Query Layer may coordinate existing database, graph, planner, and
+The Query Layer may coordinate existing database, graph, planner, scenario, and
 localization modules, validate requests, return deterministic domain objects,
 and expose canonical discovery information. It must not parse assets, duplicate
 algorithms, expose connected backend state, or contain presentation logic.
@@ -48,9 +48,46 @@ returned in ascending numeric order. Unknown factions raise
 
 - `get_building(...) -> BuildingLevel`
 - `get_prerequisites(...) -> tuple[BuildingLevel, ...]`
-- `generate_build_plan(...) -> BuildPlan`
-- `get_cumulative_cost(...) -> ResourceCost`
-- `enumerate_build_orders(...) -> tuple[tuple[BuildingKey, ...], ...]`
+- `get_prerequisite_statuses(..., scenario=None) -> tuple[PrerequisiteStatus, ...]`
+- `generate_build_plan(..., scenario=None) -> BuildPlan`
+- `get_cumulative_cost(..., scenario=None) -> ResourceCost`
+- `enumerate_build_orders(..., scenario=None) -> tuple[tuple[BuildingKey, ...], ...]`
+
+When `scenario` is omitted or `None`, planning behavior remains identical to the
+Version 1.0 canonical behavior.
+
+## Scenario-Aware Planning
+
+Scenario contracts are imported from `olden_db.scenario`:
+
+```python
+from olden_db.scenario import (
+    PlanningScenario,
+    PrerequisiteStatus,
+    StartingBuildingOverride,
+)
+```
+
+`PlanningScenario` is immutable and contains deterministic starting-building
+overrides identified by canonical `BuildingKey` values. The Query Layer
+resolves an effective immutable starting-building set and passes only that set
+to dependency-graph construction. The planner remains scenario-independent.
+
+An empty `PlanningScenario()` is behaviorally equivalent to canonical planning.
+Scenario-aware plan, cost, and build-order queries must receive the same
+scenario object to describe the same hypothetical starting state.
+
+`get_prerequisite_statuses()` returns one immutable `PrerequisiteStatus` for
+each direct prerequisite, in deterministic SID and level order. Each status
+contains:
+
+- `building`: the canonical `BuildingLevel`;
+- `available_at_start`: effective scenario availability;
+- `overridden`: whether effective availability differs from the canonical
+  `constructed_on_start` value.
+
+Clients must use this result rather than interpreting
+`BuildingLevel.constructed_on_start` as scenario state.
 
 ## Version 1.0 Public Contract
 
@@ -156,4 +193,5 @@ From the outer `olden_db/` directory:
 python -m scripts.test_query
 python -m scripts.test_query_initialization
 python -m scripts.test_query_discovery
+python -m scripts.test_query_scenarios
 ```
