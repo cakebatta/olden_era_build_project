@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .comparison import PlanComparison, compare_build_plans
 from .database import LoadedGameData, load_default_game_data
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
@@ -150,6 +151,36 @@ class PlanningQueryService:
     ) -> tuple[tuple[BuildingKey, ...], ...]:
         _, graph = self._build_graph(faction, sid, level, scenario=scenario)
         return tuple(iter_topological_orders(graph, max_orders=max_orders))
+
+    def compare_plans(
+        self,
+        left_faction: str,
+        left_sid: str,
+        left_level: int,
+        *,
+        right_faction: str,
+        right_sid: str,
+        right_level: int,
+        left_scenario: PlanningScenario | None = None,
+        right_scenario: PlanningScenario | None = None,
+        starting_date: GameDate = GameDate(1, 1, 1),
+    ) -> PlanComparison:
+        """Generate and compare two plans using right-minus-left semantics."""
+        left_plan = self.generate_build_plan(
+            left_faction,
+            left_sid,
+            left_level,
+            starting_date=starting_date,
+            scenario=left_scenario,
+        )
+        right_plan = self.generate_build_plan(
+            right_faction,
+            right_sid,
+            right_level,
+            starting_date=starting_date,
+            scenario=right_scenario,
+        )
+        return compare_build_plans(left_plan, right_plan)
 
     def _get_city(self, faction: str) -> FactionCity:
         if not faction:
