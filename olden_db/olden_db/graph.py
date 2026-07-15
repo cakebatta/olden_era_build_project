@@ -28,8 +28,8 @@ class DependencyGraph:
     The constructible prerequisite subgraph for one target building level.
 
     `nodes` contains only building levels that require construction. Buildings
-    already constructed at game start are treated as satisfied boundary nodes
-    and are recorded separately in `satisfied_starting_nodes`.
+    available at game start are treated as satisfied boundary nodes and are
+    recorded separately in `satisfied_starting_nodes`.
 
     `prerequisites[node]` contains only prerequisites that also require
     construction. `dependents[node]` contains the reverse edges.
@@ -46,22 +46,35 @@ class DependencyGraph:
         if self.target.faction != self.faction:
             raise ValueError("target faction does not match graph faction")
 
-        if self.target not in self.nodes and self.target not in self.satisfied_starting_nodes:
-            raise ValueError("target must be present in the graph or already satisfied")
+        if (
+            self.target not in self.nodes
+            and self.target not in self.satisfied_starting_nodes
+        ):
+            raise ValueError(
+                "target must be present in the graph or already satisfied"
+            )
 
         if set(self.prerequisites) != set(self.nodes):
-            raise ValueError("prerequisites must contain exactly one entry per graph node")
+            raise ValueError(
+                "prerequisites must contain exactly one entry per graph node"
+            )
 
         if set(self.dependents) != set(self.nodes):
-            raise ValueError("dependents must contain exactly one entry per graph node")
+            raise ValueError(
+                "dependents must contain exactly one entry per graph node"
+            )
 
         for node, required in self.prerequisites.items():
             if not required.issubset(self.nodes):
-                raise ValueError(f"Prerequisites for {node} contain nodes outside the graph")
+                raise ValueError(
+                    f"Prerequisites for {node} contain nodes outside the graph"
+                )
 
         for node, downstream in self.dependents.items():
             if not downstream.issubset(self.nodes):
-                raise ValueError(f"Dependents for {node} contain nodes outside the graph")
+                raise ValueError(
+                    f"Dependents for {node} contain nodes outside the graph"
+                )
 
     @property
     def build_actions(self) -> int:
@@ -77,13 +90,15 @@ class DependencyGraph:
 def build_dependency_graph(
     city: FactionCity,
     target: BuildingKey,
+    *,
+    starting_buildings: frozenset[BuildingKey] | None = None,
 ) -> DependencyGraph:
     """
     Build the prerequisite DAG needed for `target`.
 
-    Traversal stops at building levels marked `constructed_on_start`, because
-    those nodes and their own prerequisites require no construction actions for
-    the selected game setup.
+    When `starting_buildings` is omitted, canonical `constructed_on_start`
+    values define starting availability. When supplied, that explicit set is
+    authoritative, including when it is empty.
     """
     if target.faction != city.faction:
         raise GraphError(
@@ -93,6 +108,25 @@ def build_dependency_graph(
 
     if target not in city.buildings:
         raise MissingBuildingError(f"Unknown target building node: {target}")
+
+    if starting_buildings is None:
+        effective_starting = frozenset(
+            key
+            for key, building in city.buildings.items()
+            if building.constructed_on_start
+        )
+    else:
+        effective_starting = frozenset(starting_buildings)
+        for key in effective_starting:
+            if key.faction != city.faction:
+                raise GraphError(
+                    f"Starting building faction {key.faction!r} does not match "
+                    f"city faction {city.faction!r}: {key}"
+                )
+            if key not in city.buildings:
+                raise MissingBuildingError(
+                    f"Unknown starting building node: {key}"
+                )
 
     required_nodes: set[BuildingKey] = set()
     satisfied_starting: set[BuildingKey] = set()
@@ -115,15 +149,16 @@ def build_dependency_graph(
             cycle_text = " -> ".join(
                 f"{item.sid} L{item.level}" for item in cycle
             )
-            raise DependencyCycleError(f"Dependency cycle detected: {cycle_text}")
+            raise DependencyCycleError(
+                f"Dependency cycle detected: {cycle_text}"
+            )
 
-        building = city.buildings[node]
-
-        if building.constructed_on_start:
+        if node in effective_starting:
             satisfied_starting.add(node)
             visited.add(node)
             return
 
+        building = city.buildings[node]
         visiting.append(node)
 
         for prerequisite in building.prerequisites:
@@ -171,14 +206,7 @@ def iter_topological_orders(
     *,
     max_orders: int | None = None,
 ) -> Iterator[tuple[BuildingKey, ...]]:
-    """
-    Yield every valid topological build order for `graph`.
-
-    Results are deterministic: whenever several buildings are available, they
-    are considered in `(sid, level)` order. Set `max_orders` to protect against
-    unexpectedly large graphs. If the limit would be exceeded, a
-    TopologicalOrderLimitError is raised rather than silently truncating.
-    """
+    """Yield every valid topological build order for `graph`."""
     if max_orders is not None and max_orders < 1:
         raise ValueError("max_orders must be at least 1 or None")
 
@@ -208,7 +236,6 @@ def iter_topological_orders(
                     f"More than {max_orders} topological orders exist for "
                     f"{graph.target}"
                 )
-
             yielded += 1
             yield tuple(order)
             return
@@ -226,13 +253,11 @@ def iter_topological_orders(
 
             next_available = set(current_available)
             next_available.remove(node)
-            unlocked: list[BuildingKey] = []
 
             for dependent in graph.dependents[node]:
                 indegree[dependent] -= 1
                 if indegree[dependent] == 0:
                     next_available.add(dependent)
-                    unlocked.append(dependent)
 
             yield from backtrack(next_available)
 
