@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from olden_db.comparison import compare_build_plans
 from olden_db.models import BuildingKey, ResourceCost
 from olden_db.query import PlanningQueryService
@@ -28,6 +30,8 @@ def main() -> None:
         raise RuntimeError("Identical plans produced a nonzero resource delta")
     if identical.added_buildings or identical.removed_buildings:
         raise RuntimeError("Identical plans produced building differences")
+
+    _check_duplicate_action_error(canonical)
 
     remove_wall = PlanningScenario(
         (StartingBuildingOverride(wall, False),)
@@ -89,9 +93,29 @@ def main() -> None:
 
     print("Plan comparison validation completed successfully.")
     print("Identical plans produced zero deltas and no action differences.")
+    print("Duplicate action identities raised ValueError.")
     print("Canonical-to-scenario deltas followed right-minus-left semantics.")
     print("Added and removed construction actions were reported deterministically.")
     print("Comparison symmetry, determinism, and input immutability were preserved.")
+
+
+def _check_duplicate_action_error(plan) -> None:
+    if not plan.steps:
+        raise RuntimeError("Representative plan has no actions for duplicate test")
+    malformed = replace(
+        plan,
+        steps=plan.steps + (plan.steps[0],),
+    )
+    try:
+        compare_build_plans(malformed, plan)
+    except ValueError as exc:
+        expected = "left plan contains duplicate construction action identities"
+        if str(exc) != expected:
+            raise RuntimeError(
+                f"Duplicate action error message changed: {exc}"
+            ) from exc
+    else:
+        raise RuntimeError("Duplicate action identities did not raise ValueError")
 
 
 def _assert_symmetric(forward, reverse) -> None:

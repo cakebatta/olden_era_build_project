@@ -6,14 +6,6 @@ from .models import BuildingKey, ResourceCost
 from .planner import BuildPlan
 
 
-class PlanComparisonError(ValueError):
-    """Base exception for invalid build-plan comparisons."""
-
-
-class DuplicatePlanActionError(PlanComparisonError):
-    """Raised when one plan constructs the same building identity twice."""
-
-
 @dataclass(frozen=True, slots=True)
 class PlanComparison:
     """Immutable right-minus-left comparison of two completed build plans.
@@ -70,7 +62,7 @@ def _unique_action_buildings(
     buildings = tuple(step.building for step in plan.steps)
     unique = frozenset(buildings)
     if len(buildings) != len(unique):
-        raise DuplicatePlanActionError(
+        raise ValueError(
             f"{side} plan contains duplicate construction action identities"
         )
     return unique
