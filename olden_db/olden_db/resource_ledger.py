@@ -1,0 +1,247 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from .constants import RESOURCE_NAMES
+from .models import BuildingKey, ResourceCost, UnitFamily
+from .planner import BuildPlan, GameDate
+from .recruitment_stock import RecruitmentStock
+
+
+@dataclass(frozen=True, slots=True)
+class RecruitmentAction:
+    """One dated direct-recruitment request from shared dwelling stock."""
+
+    date: GameDate
+    dwelling: BuildingKey
+    base_quantity: int = 0
+    upgraded_quantity: int = 0
+
+    def __post_init__(self) -> None:
+        if self.base_quantity < 0 or self.upgraded_quantity < 0:
+            raise ValueError("recruitment quantities cannot be negative")
+        if self.base_quantity + self.upgraded_quantity < 1:
+            raise ValueError("recruitment action must recruit at least one creature")
+
+
+@dataclass(frozen=True, slots=True)
+class ConstructionLedgerEntry:
+    date: GameDate
+    building: BuildingKey
+    cost: ResourceCost
+    balance_after: ResourceCost
+
+
+@dataclass(frozen=True, slots=True)
+class RecruitmentLedgerEntry:
+    date: GameDate
+    action: RecruitmentAction
+    unit_family: UnitFamily
+    cost: ResourceCost
+    stock_before: int
+    stock_after: int
+    balance_after: ResourceCost
+
+
+@dataclass(frozen=True, slots=True)
+class DailyResourceBalance:
+    date: GameDate
+    balance: ResourceCost
+
+
+@dataclass(frozen=True, slots=True)
+class ResourceDeficit:
+    date: GameDate
+    resource: str
+    balance: int
+    entry_index: int
+
+    def __post_init__(self) -> None:
+        if self.resource not in RESOURCE_NAMES:
+            raise ValueError(f"Unknown resource name: {self.resource!r}")
+        if self.balance >= 0:
+            raise ValueError("deficit balance must be negative")
+        if self.entry_index < 1:
+            raise ValueError("entry_index must be at least 1")
+
+
+@dataclass(frozen=True, slots=True)
+class ResourceLedger:
+    plan: BuildPlan
+    stock: RecruitmentStock
+    actions: tuple[RecruitmentAction, ...]
+    starting_resources: ResourceCost
+    construction_entries: tuple[ConstructionLedgerEntry, ...]
+    recruitment_entries: tuple[RecruitmentLedgerEntry, ...]
+    daily_balances: tuple[DailyResourceBalance, ...]
+    construction_total: ResourceCost
+    recruitment_total: ResourceCost
+    combined_total: ResourceCost
+    ending_balance: ResourceCost
+    feasible: bool
+    first_deficit: ResourceDeficit | None
+
+
+def build_resource_ledger(
+    plan: BuildPlan,
+    stock: RecruitmentStock,
+    recruitment_actions: tuple[RecruitmentAction, ...],
+    starting_resources: ResourceCost,
+) -> ResourceLedger:
+    """Build a deterministic construction-and-recruitment resource ledger."""
+    if not isinstance(plan, BuildPlan):
+        raise TypeError("plan must be a BuildPlan")
+    if not isinstance(stock, RecruitmentStock):
+        raise TypeError("stock must be a RecruitmentStock")
+    if not isinstance(recruitment_actions, tuple):
+        raise TypeError("recruitment_actions must be a tuple")
+    if not isinstance(starting_resources, ResourceCost):
+        raise TypeError("starting_resources must be a ResourceCost")
+    if plan.faction != stock.faction:
+        raise ValueError("plan and recruitment stock factions do not match")
+    if any(getattr(starting_resources, name) < 0 for name in RESOURCE_NAMES):
+        raise ValueError("starting resources cannot contain negative values")
+    if any(not isinstance(action, RecruitmentAction) for action in recruitment_actions):
+        raise TypeError("recruitment_actions must contain RecruitmentAction values")
+
+    indexed_actions = tuple(enumerate(recruitment_actions))
+    seen: set[tuple[GameDate, BuildingKey]] = set()
+    for _, action in indexed_actions:
+        key = (action.date, action.dwelling)
+        if key in seen:
+            raise ValueError("duplicate recruitment action for the same dwelling and date")
+        seen.add(key)
+        if action.dwelling.faction != plan.faction:
+            raise ValueError("recruitment action faction does not match plan")
+        if action.date.day_index < plan.starting_date.day_index:
+            raise ValueError("recruitment action precedes plan starting date")
+        if action.date.day_index > stock.through_date.day_index:
+            raise ValueError("recruitment action exceeds recruitment-stock coverage")
+
+    ordered_actions = tuple(
+        action
+        for _, action in sorted(
+            indexed_actions,
+            key=lambda item: (item[1].date.day_index, item[0]),
+        )
+    )
+
+    construction_events = {step.date: step for step in plan.steps}
+    actions_by_date: dict[GameDate, list[RecruitmentAction]] = {}
+    for action in ordered_actions:
+        actions_by_date.setdefault(action.date, []).append(action)
+
+    end_index = max(
+        [plan.completion_date.day_index, stock.through_date.day_index]
+        + [action.date.day_index for action in ordered_actions]
+    )
+
+    balance = starting_resources
+    construction_total = ResourceCost()
+    recruitment_total = ResourceCost()
+    construction_entries: list[ConstructionLedgerEntry] = []
+    recruitment_entries: list[RecruitmentLedgerEntry] = []
+    daily_balances: list[DailyResourceBalance] = []
+    purchased: dict[BuildingKey, int] = {}
+    unlocked_level_2: set[tuple[str, str]] = set()
+    first_deficit: ResourceDeficit | None = None
+    event_index = 0
+
+    for day_index in range(plan.starting_date.day_index, end_index + 1):
+        date = GameDate.from_day_index(day_index)
+        step = construction_events.get(date)
+        if step is not None:
+            event_index += 1
+            balance = balance - step.individual_cost
+            construction_total = construction_total + step.individual_cost
+            construction_entries.append(
+                ConstructionLedgerEntry(date, step.building, step.individual_cost, balance)
+            )
+            if step.building.level >= 2:
+                unlocked_level_2.add((step.building.faction, step.building.sid))
+            if first_deficit is None:
+                first_deficit = _deficit_for(balance, date, event_index)
+
+        for action in actions_by_date.get(date, ()):
+            family = _family_for(stock, action.dwelling, date)
+            if action.upgraded_quantity > 0 and (
+                action.dwelling.faction,
+                action.dwelling.sid,
+            ) not in unlocked_level_2:
+                raise ValueError(
+                    f"Upgraded recruitment requires dwelling level 2: {action.dwelling}"
+                )
+
+            baseline = stock.available(action.dwelling, date)
+            already_purchased = purchased.get(action.dwelling, 0)
+            stock_before = baseline - already_purchased
+            requested = action.base_quantity + action.upgraded_quantity
+            if requested > stock_before:
+                raise ValueError(
+                    f"Recruitment exceeds available stock for {action.dwelling} on {date}: "
+                    f"requested {requested}, available {stock_before}"
+                )
+
+            cost = _scale(family.base_cost, action.base_quantity) + _scale(
+                family.upgraded_cost,
+                action.upgraded_quantity,
+            )
+            purchased[action.dwelling] = already_purchased + requested
+            balance = balance - cost
+            recruitment_total = recruitment_total + cost
+            event_index += 1
+            recruitment_entries.append(
+                RecruitmentLedgerEntry(
+                    date,
+                    action,
+                    family,
+                    cost,
+                    stock_before,
+                    stock_before - requested,
+                    balance,
+                )
+            )
+            if first_deficit is None:
+                first_deficit = _deficit_for(balance, date, event_index)
+
+        daily_balances.append(DailyResourceBalance(date, balance))
+
+    combined_total = construction_total + recruitment_total
+    return ResourceLedger(
+        plan=plan,
+        stock=stock,
+        actions=ordered_actions,
+        starting_resources=starting_resources,
+        construction_entries=tuple(construction_entries),
+        recruitment_entries=tuple(recruitment_entries),
+        daily_balances=tuple(daily_balances),
+        construction_total=construction_total,
+        recruitment_total=recruitment_total,
+        combined_total=combined_total,
+        ending_balance=balance,
+        feasible=first_deficit is None,
+        first_deficit=first_deficit,
+    )
+
+
+def _family_for(stock: RecruitmentStock, dwelling: BuildingKey, date: GameDate) -> UnitFamily:
+    for entry in stock.on_date(date):
+        if entry.dwelling == dwelling:
+            return entry.unit_family
+    raise ValueError(f"Unknown dwelling in recruitment stock: {dwelling}")
+
+
+def _scale(cost: ResourceCost, quantity: int) -> ResourceCost:
+    return ResourceCost(**{name: getattr(cost, name) * quantity for name in RESOURCE_NAMES})
+
+
+def _deficit_for(
+    balance: ResourceCost,
+    date: GameDate,
+    entry_index: int,
+) -> ResourceDeficit | None:
+    for resource in RESOURCE_NAMES:
+        value = getattr(balance, resource)
+        if value < 0:
+            return ResourceDeficit(date, resource, value, entry_index)
+    return None
