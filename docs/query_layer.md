@@ -9,10 +9,10 @@ implementation details.
 ## Responsibilities
 
 The Query Layer may coordinate existing database, graph, planner, scenario,
-comparison, and localization modules, validate requests, return deterministic
-domain objects, and expose canonical discovery information. It must not parse
-assets, duplicate algorithms, expose connected backend state, or contain
-presentation logic.
+comparison, decision-summary, and localization modules, validate requests,
+return deterministic domain objects, and expose canonical discovery
+information. It must not parse assets, duplicate algorithms, expose connected
+backend state, or contain presentation logic.
 
 ## Initialization
 
@@ -54,6 +54,7 @@ returned in ascending numeric order. Unknown factions raise
 - `get_cumulative_cost(..., scenario=None) -> ResourceCost`
 - `enumerate_build_orders(..., scenario=None) -> tuple[tuple[BuildingKey, ...], ...]`
 - `compare_plans(...) -> PlanComparison`
+- `generate_decision_summary(...) -> DecisionSummary`
 
 When `scenario` is omitted or `None`, planning behavior remains identical to the
 Version 1.0 canonical behavior.
@@ -95,21 +96,7 @@ Clients must use this result rather than interpreting
 
 `compare_plans()` is the public Query Layer entry point for pairwise plan
 comparison. It accepts explicit left and right targets, independent optional
-scenarios, and one shared starting date:
-
-```python
-comparison = queries.compare_plans(
-    left_faction,
-    left_sid,
-    left_level,
-    left_scenario=left_scenario,
-    right_faction=right_faction,
-    right_sid=right_sid,
-    right_level=right_level,
-    right_scenario=right_scenario,
-    starting_date=GameDate(1, 1, 1),
-)
-```
+scenarios, and one shared starting date.
 
 The Query Layer generates each `BuildPlan` independently through the existing
 planning pipeline and delegates all comparison calculations to
@@ -120,6 +107,21 @@ The returned immutable `PlanComparison` follows right-minus-left semantics.
 Positive deltas mean the right plan has more actions, finishes later, or costs
 more. Independent scenarios support canonical-to-canonical,
 canonical-to-scenario, and scenario-to-scenario comparisons.
+
+## Decision Summaries
+
+`generate_decision_summary()` mirrors `compare_plans()` and supports the same
+explicit left and right targets, independent scenarios, and shared starting
+date.
+
+The Query Layer first delegates plan generation and comparison to
+`compare_plans()`. It then passes the resulting `PlanComparison` directly to
+`summarize_plan_comparison()` in `olden_db.decision_summary`.
+
+The Query Layer does not duplicate comparison calculations or construct
+decision observations. The returned immutable `DecisionSummary` contains
+structured facts only; formatting, recommendation, preference, ranking, and
+presentation remain client responsibilities.
 
 ## Version 1.0 Public Contract
 
@@ -227,4 +229,5 @@ python -m scripts.test_query_initialization
 python -m scripts.test_query_discovery
 python -m scripts.test_query_scenarios
 python -m scripts.test_query_comparison
+python -m scripts.test_query_decision_summary
 ```

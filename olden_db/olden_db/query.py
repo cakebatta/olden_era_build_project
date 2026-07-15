@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from .comparison import PlanComparison, compare_build_plans
 from .database import LoadedGameData, load_default_game_data
+from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
 from .planner import BuildPlan, GameDate, plan_build_order
@@ -38,16 +39,13 @@ class PlanningQueryService:
         return cls(load_default_game_data())
 
     def list_factions(self) -> tuple[str, ...]:
-        """Return canonical faction identifiers in deterministic order."""
         return tuple(sorted(self._data.cities.cities))
 
     def list_buildings(self, faction: str) -> tuple[str, ...]:
-        """Return unique canonical building SIDs for one faction."""
         city = self._get_city(faction)
         return tuple(sorted({key.sid for key in city.buildings}))
 
     def list_building_levels(self, faction: str, sid: str) -> tuple[int, ...]:
-        """Return valid levels for one canonical building SID."""
         city = self._get_city(faction)
         if not sid:
             raise QueryError("sid cannot be empty")
@@ -92,11 +90,9 @@ class PlanningQueryService:
         *,
         scenario: PlanningScenario | None = None,
     ) -> tuple[PrerequisiteStatus, ...]:
-        """Return effective starting status for each direct prerequisite."""
         city = self._get_city(faction)
         building = self.get_building(faction, sid, level)
         effective_starting = self._effective_starting_buildings(city, scenario)
-
         return tuple(
             PrerequisiteStatus(
                 building=city.buildings[key],
@@ -165,7 +161,6 @@ class PlanningQueryService:
         right_scenario: PlanningScenario | None = None,
         starting_date: GameDate = GameDate(1, 1, 1),
     ) -> PlanComparison:
-        """Generate and compare two plans using right-minus-left semantics."""
         left_plan = self.generate_build_plan(
             left_faction,
             left_sid,
@@ -181,6 +176,32 @@ class PlanningQueryService:
             scenario=right_scenario,
         )
         return compare_build_plans(left_plan, right_plan)
+
+    def generate_decision_summary(
+        self,
+        left_faction: str,
+        left_sid: str,
+        left_level: int,
+        *,
+        right_faction: str,
+        right_sid: str,
+        right_level: int,
+        left_scenario: PlanningScenario | None = None,
+        right_scenario: PlanningScenario | None = None,
+        starting_date: GameDate = GameDate(1, 1, 1),
+    ) -> DecisionSummary:
+        comparison = self.compare_plans(
+            left_faction,
+            left_sid,
+            left_level,
+            right_faction=right_faction,
+            right_sid=right_sid,
+            right_level=right_level,
+            left_scenario=left_scenario,
+            right_scenario=right_scenario,
+            starting_date=starting_date,
+        )
+        return summarize_plan_comparison(comparison)
 
     def _get_city(self, faction: str) -> FactionCity:
         if not faction:
