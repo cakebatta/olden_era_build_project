@@ -10,17 +10,34 @@ from .formatting import format_building_key, format_game_date
 
 
 def format_resource_vector(resources: ResourceCost) -> str:
+    """Format a complete authoritative resource vector."""
     return ", ".join(
         f"{name}: {getattr(resources, name)}"
         for name in RESOURCE_NAMES
     )
 
 
-def _ordered_events(ledger: ResourceLedger) -> tuple[tuple[str, object], ...]:
+def format_event_cost(resources: ResourceCost) -> str:
+    """Format only nonzero resources for compact event presentation."""
+    values = tuple(
+        f"{name}: {getattr(resources, name)}"
+        for name in RESOURCE_NAMES
+        if getattr(resources, name) != 0
+    )
+    return ", ".join(values) if values else "None"
+
+
+def _ordered_events(
+    ledger: ResourceLedger,
+) -> tuple[tuple[str, object], ...]:
     construction_by_date = {
-        entry.date: entry for entry in ledger.construction_entries
+        entry.date: entry
+        for entry in ledger.construction_entries
     }
-    recruitment_by_date: dict[object, list[object]] = defaultdict(list)
+    recruitment_by_date: dict[
+        object,
+        list[object],
+    ] = defaultdict(list)
     for entry in ledger.recruitment_entries:
         recruitment_by_date[entry.date].append(entry)
 
@@ -31,7 +48,10 @@ def _ordered_events(ledger: ResourceLedger) -> tuple[tuple[str, object], ...]:
             events.append(("Construction", construction))
         events.extend(
             ("Recruitment", entry)
-            for entry in recruitment_by_date.get(daily.date, ())
+            for entry in recruitment_by_date.get(
+                daily.date,
+                (),
+            )
         )
     return tuple(events)
 
@@ -42,14 +62,24 @@ def _deficit_trigger(ledger: ResourceLedger) -> str:
         return ""
     events = _ordered_events(ledger)
     index = deficit.entry_index - 1
-    return events[index][0] if 0 <= index < len(events) else "Unknown"
+    return (
+        events[index][0]
+        if 0 <= index < len(events)
+        else "Unknown"
+    )
 
 
-def format_resource_ledger(ledger: ResourceLedger) -> str:
+def format_resource_ledger(
+    ledger: ResourceLedger,
+) -> str:
     construction_by_date = {
-        entry.date: entry for entry in ledger.construction_entries
+        entry.date: entry
+        for entry in ledger.construction_entries
     }
-    recruitment_by_date: dict[object, list[object]] = defaultdict(list)
+    recruitment_by_date: dict[
+        object,
+        list[object],
+    ] = defaultdict(list)
     for entry in ledger.recruitment_entries:
         recruitment_by_date[entry.date].append(entry)
 
@@ -68,11 +98,14 @@ def format_resource_ledger(ledger: ResourceLedger) -> str:
                     "Construction event: "
                     f"{format_building_key(construction.building)}",
                     "Construction cost: "
-                    f"{format_resource_vector(construction.cost)}",
+                    f"{format_event_cost(construction.cost)}",
                 )
             )
 
-        recruitment = recruitment_by_date.get(daily.date, ())
+        recruitment = recruitment_by_date.get(
+            daily.date,
+            (),
+        )
         if not recruitment:
             lines.append("Recruitment events: None")
         else:
@@ -83,9 +116,10 @@ def format_resource_ledger(ledger: ResourceLedger) -> str:
                         "Recruitment event: "
                         f"{format_building_key(action.dwelling)}",
                         f"  Base quantity: {action.base_quantity}",
-                        f"  Upgraded quantity: {action.upgraded_quantity}",
+                        "  Upgraded quantity: "
+                        f"{action.upgraded_quantity}",
                         "  Recruitment cost: "
-                        f"{format_resource_vector(entry.cost)}",
+                        f"{format_event_cost(entry.cost)}",
                         f"  Stock before: {entry.stock_before}",
                         f"  Stock after: {entry.stock_after}",
                     )
@@ -120,8 +154,11 @@ def format_resource_ledger(ledger: ResourceLedger) -> str:
                 f"Resource: {deficit.resource}",
                 f"Signed balance: {deficit.balance}",
                 f"Deficit magnitude: {-deficit.balance}",
-                f"Triggering entry: {_deficit_trigger(ledger)}",
+                "Triggering entry: "
+                f"{_deficit_trigger(ledger)}",
             )
         )
 
-    return "\n\n".join(sections + ["\n".join(summary)])
+    return "\n\n".join(
+        sections + ["\n".join(summary)]
+    )
