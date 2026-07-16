@@ -9,10 +9,10 @@ implementation details.
 ## Responsibilities
 
 The Query Layer may coordinate existing database, graph, planner, scenario,
-comparison, decision-summary, and localization modules, validate requests,
-return deterministic domain objects, and expose canonical discovery
-information. It must not parse assets, duplicate algorithms, expose connected
-backend state, or contain presentation logic.
+comparison, decision-summary, recruitment-stock, resource-ledger, and
+localization modules, validate requests, return deterministic domain objects,
+and expose canonical discovery information. It must not parse assets, duplicate
+algorithms, expose connected backend state, or contain presentation logic.
 
 ## Initialization
 
@@ -55,6 +55,7 @@ returned in ascending numeric order. Unknown factions raise
 - `enumerate_build_orders(..., scenario=None) -> tuple[tuple[BuildingKey, ...], ...]`
 - `compare_plans(...) -> PlanComparison`
 - `generate_decision_summary(...) -> DecisionSummary`
+- `generate_resource_ledger(...) -> ResourceLedger`
 
 When `scenario` is omitted or `None`, planning behavior remains identical to the
 Version 1.0 canonical behavior.
@@ -122,6 +123,38 @@ The Query Layer does not duplicate comparison calculations or construct
 decision observations. The returned immutable `DecisionSummary` contains
 structured facts only; formatting, recommendation, preference, ranking, and
 presentation remain client responsibilities.
+
+## Resource Ledgers
+
+`generate_resource_ledger()` is the public Query Layer entry point for
+construction and recruitment accounting. It accepts a canonical faction and
+target, a starting date, an optional `PlanningScenario`, an immutable tuple of
+`RecruitmentAction` values, and an explicit starting `ResourceCost`.
+
+The Query Layer resolves the effective starting-building set exactly once. It
+then reuses that same immutable set for dependency-graph construction,
+`RecruitmentStock` generation, and `ResourceLedger` generation:
+
+```text
+PlanningScenario
+        |
+        v
+effective frozenset[BuildingKey]
+        |
+        +--> BuildPlan
+        +--> RecruitmentStock
+        +--> ResourceLedger
+```
+
+Application clients do not receive or manage the effective starting set and do
+not construct intermediate stock objects. Recruitment actions dated after plan
+completion automatically extend stock coverage through the latest action date.
+
+The Query Layer delegates planning to the graph and planner modules, creature
+availability to `calculate_recruitment_stock()`, and accounting to
+`build_resource_ledger()`. It does not duplicate those algorithms. The returned
+ledger therefore guarantees one faction, one starting date, and one scenario
+across its plan, stock, and accounting data.
 
 ## Version 1.0 Public Contract
 
@@ -230,4 +263,5 @@ python -m scripts.test_query_discovery
 python -m scripts.test_query_scenarios
 python -m scripts.test_query_comparison
 python -m scripts.test_query_decision_summary
+python -m scripts.test_query_resource_ledger
 ```

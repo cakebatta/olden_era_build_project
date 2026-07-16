@@ -8,6 +8,12 @@ from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
 from .planner import BuildPlan, GameDate, plan_build_order
+from .recruitment_stock import calculate_recruitment_stock
+from .resource_ledger import (
+    RecruitmentAction,
+    ResourceLedger,
+    build_resource_ledger,
+)
 from .scenario import (
     PlanningScenario,
     PrerequisiteStatus,
@@ -202,6 +208,58 @@ class PlanningQueryService:
             starting_date=starting_date,
         )
         return summarize_plan_comparison(comparison)
+
+    def generate_resource_ledger(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+        recruitment_actions: tuple[RecruitmentAction, ...],
+        starting_resources: ResourceCost,
+        *,
+        starting_date: GameDate = GameDate(1, 1, 1),
+        scenario: PlanningScenario | None = None,
+    ) -> ResourceLedger:
+        """Generate one scenario-consistent construction/recruitment ledger."""
+        city = self._get_city(faction)
+        building = self.get_building(faction, sid, level)
+        effective_starting = self._effective_starting_buildings(city, scenario)
+
+        graph = build_dependency_graph(
+            city,
+            building.key,
+            starting_buildings=effective_starting,
+        )
+        order = next(iter_topological_orders(graph))
+        plan = plan_build_order(
+            city,
+            graph,
+            order,
+            starting_date=starting_date,
+        )
+
+        through_date = plan.completion_date
+        for action in recruitment_actions:
+            if (
+                isinstance(action, RecruitmentAction)
+                and action.date.day_index > through_date.day_index
+            ):
+                through_date = action.date
+
+        stock = calculate_recruitment_stock(
+            city,
+            plan,
+            through_date=through_date,
+            starting_buildings=effective_starting,
+        )
+        return build_resource_ledger(
+            city,
+            plan,
+            stock,
+            recruitment_actions,
+            starting_resources,
+            starting_buildings=effective_starting,
+        )
 
     def _get_city(self, faction: str) -> FactionCity:
         if not faction:
