@@ -38,6 +38,9 @@ but are not independently encoded in the parsed assets.
 
 - A completed income building begins generating its retained income amount on the following day.
 - It continues generating that amount daily while available.
+- A building available in the effective starting state generates income on the plan starting date.
+- For a multi-level building SID, only the highest active level generates income.
+- When an upgrade completes, the lower level generates on the construction day and the upgraded amount replaces it on the following day; levels do not stack.
 
 These timing assumptions are deliberately separate from the asset-derived
 `BuildingLevel.income` amount.
@@ -71,6 +74,6 @@ These timing assumptions are deliberately separate from the asset-derived
 ## Modelling Boundaries
 
 - Resource pickups are random and excluded from modelling.
-- Building-income cadence and activation belong to the future IncomeTimeline domain, not the parser.
+- Building-income cadence and activation belong to the Income Timeline domain, not the parser.
 - The parser retains only authoritative income amounts.
 - Recruitment stock, spending, upgrading, and income timing remain separate deterministic domains.

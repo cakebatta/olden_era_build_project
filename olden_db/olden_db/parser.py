@@ -144,7 +144,7 @@ def _parse_income_levels(raw_levels: object, *, level_count: int, source: Path, 
     if raw_levels is None:
         return tuple(ResourceCost() for _ in range(level_count))
     if not isinstance(raw_levels, list):
-        raise CityParseError(f"{source}: {sid!r}.bonusesPerLevel must be a list")
+        raise CityParseError(f"{source}: {sid!r} level 1 bonusesPerLevel must be a list")
     if len(raw_levels) != level_count:
         raise CityParseError(
             f"{source}: {sid!r}.bonusesPerLevel contains {len(raw_levels)} levels; expected {level_count}"
