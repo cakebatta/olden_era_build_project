@@ -18,7 +18,6 @@ from olden_db.scenario import (
 from ..formatting import format_faction_status
 from ..state import PlannerState
 
-
 SCENARIO_ERRORS = (
     ScenarioError,
     DuplicateStartingBuildingOverrideError,
@@ -27,17 +26,7 @@ SCENARIO_ERRORS = (
 
 
 class PlannerViewContract(Protocol):
-    def set_event_handlers(
-        self,
-        *,
-        on_faction_changed: Callable[[str], None],
-        on_building_changed: Callable[[str], None],
-        on_level_changed: Callable[[int], None],
-        on_generate_plan: Callable[[], None],
-        on_starting_building_changed: Callable[[BuildingKey, bool], None],
-        on_reset_scenario: Callable[[], None],
-    ) -> None: ...
-
+    def set_event_handlers(self, **handlers) -> None: ...
     def set_factions(self, factions: tuple[str, ...]) -> None: ...
     def set_buildings(self, buildings: tuple[str, ...]) -> None: ...
     def set_levels(self, levels: tuple[int, ...]) -> None: ...
@@ -53,8 +42,15 @@ class PlannerViewContract(Protocol):
     def set_planning_mode(self, override_count: int) -> None: ...
     def clear_results(self) -> None: ...
     def show_target(self, building: BuildingLevel) -> None: ...
-    def show_prerequisites(self, statuses: tuple[PrerequisiteStatus, ...]) -> None: ...
-    def show_plan(self, plan: BuildPlan, cumulative_cost: ResourceCost) -> None: ...
+    def show_prerequisites(
+        self,
+        statuses: tuple[PrerequisiteStatus, ...],
+    ) -> None: ...
+    def show_plan(
+        self,
+        plan: BuildPlan,
+        cumulative_cost: ResourceCost,
+    ) -> None: ...
     def show_error(self, message: str) -> None: ...
 
 
@@ -65,11 +61,13 @@ class PlannerPresenter:
         state: PlannerState,
         view: PlannerViewContract,
         set_status: Callable[[str], None],
+        on_context_changed: Callable[[], None] | None = None,
     ) -> None:
         self._service = service
         self._state = state
         self._view = view
         self._set_status = set_status
+        self._on_context_changed = on_context_changed or (lambda: None)
 
     def initialize(self) -> None:
         self._view.set_event_handlers(
@@ -96,15 +94,19 @@ class PlannerPresenter:
         self._view.clear_level_selection()
         self._view.set_generate_enabled(False)
         try:
-            building_sids = self._service.list_buildings(faction)
-            candidates = self._load_scenario_candidates(faction, building_sids)
+            sids = self._service.list_buildings(faction)
+            candidates = self._load_candidates(faction, sids)
         except QueryError as exc:
-            self._show_request_error(exc)
+            self._show_error(exc)
             return
         self._state.select_faction(faction, candidates)
-        self._view.set_buildings(building_sids)
-        self._view.set_starting_buildings(candidates, self._state.active_scenario)
+        self._view.set_buildings(sids)
+        self._view.set_starting_buildings(
+            candidates,
+            self._state.active_scenario,
+        )
         self._view.set_planning_mode(0)
+        self._on_context_changed()
         self._set_status(f"Faction selected: {faction}. Select a building.")
 
     def on_building_changed(self, sid: str) -> None:
@@ -118,57 +120,75 @@ class PlannerPresenter:
         try:
             levels = self._service.list_building_levels(faction, sid)
         except QueryError as exc:
-            self._show_request_error(exc)
+            self._show_error(exc)
             return
         self._state.select_building(sid)
         self._view.set_levels(levels)
+        self._on_context_changed()
         self._set_status(f"Building selected: {sid}. Select a level.")
 
     def on_level_changed(self, level: int) -> None:
-        if self._state.selected_faction is None or self._state.selected_building_sid is None:
-            self._set_status("Select a faction and building before selecting a level.")
+        if (
+            self._state.selected_faction is None
+            or self._state.selected_building_sid is None
+        ):
             self._view.set_generate_enabled(False)
             return
         self._clear_generated_results()
         self._state.select_level(level)
         self._view.set_generate_enabled(self._state.has_complete_target)
+        self._on_context_changed()
         self._set_status(
             f"Target selected: {self._state.selected_faction}/"
             f"{self._state.selected_building_sid} level {level}."
         )
 
-    def on_starting_building_changed(self, key: BuildingKey, available_at_start: bool) -> None:
-        candidate = next((item for item in self._state.scenario_candidates if item.key == key), None)
+    def on_starting_building_changed(
+        self,
+        key: BuildingKey,
+        available: bool,
+    ) -> None:
+        candidate = next(
+            (
+                item
+                for item in self._state.scenario_candidates
+                if item.key == key
+            ),
+            None,
+        )
         if candidate is None:
-            self._set_status("The selected starting building is not available for the current faction.")
             return
+
         regenerate = self._state.current_plan is not None
         overrides = {
-            override.building: override.available_at_start
-            for override in self._state.active_scenario.starting_building_overrides
+            item.building: item.available_at_start
+            for item in self._state.active_scenario.starting_building_overrides
         }
-        if available_at_start == candidate.constructed_on_start:
+        if available == candidate.constructed_on_start:
             overrides.pop(key, None)
         else:
-            overrides[key] = available_at_start
+            overrides[key] = available
+
         try:
-            scenario = PlanningScenario(tuple(
-                StartingBuildingOverride(building=building, available_at_start=value)
-                for building, value in overrides.items()
-            ))
-        except SCENARIO_ERRORS as exc:
-            self._show_scenario_error(exc)
-            self._view.set_starting_buildings(
-                self._state.scenario_candidates,
-                self._state.active_scenario,
+            scenario = PlanningScenario(
+                tuple(
+                    StartingBuildingOverride(building, value)
+                    for building, value in overrides.items()
+                )
             )
+        except SCENARIO_ERRORS as exc:
+            self._show_error(exc)
             return
+
         self._state.replace_scenario(scenario)
-        self._view.set_starting_buildings(self._state.scenario_candidates, scenario)
+        self._view.set_starting_buildings(
+            self._state.scenario_candidates,
+            scenario,
+        )
         self._view.set_planning_mode(self._state.override_count)
         self._view.clear_results()
-        mode = "canonical" if self._state.is_canonical_mode else "custom starting state"
-        self._set_status(f"Planning scenario updated: {mode}.")
+        self._on_context_changed()
+
         if regenerate and self._state.has_complete_target:
             self.on_generate_plan()
 
@@ -176,83 +196,92 @@ class PlannerPresenter:
         regenerate = self._state.current_plan is not None
         scenario = PlanningScenario()
         self._state.replace_scenario(scenario)
-        self._view.set_starting_buildings(self._state.scenario_candidates, scenario)
+        self._view.set_starting_buildings(
+            self._state.scenario_candidates,
+            scenario,
+        )
         self._view.set_planning_mode(0)
         self._view.clear_results()
-        self._set_status("Reset to canonical starting state.")
+        self._on_context_changed()
+
         if regenerate and self._state.has_complete_target:
             self.on_generate_plan()
 
     def on_generate_plan(self) -> None:
         if not self._state.has_complete_target:
-            self._view.set_generate_enabled(False)
-            self._clear_generated_results()
-            self._set_status("Select a faction, building, and level first.")
             return
+
         faction = self._state.selected_faction
         sid = self._state.selected_building_sid
         level = self._state.selected_level
-        assert faction is not None and sid is not None and level is not None
+        assert faction is not None
+        assert sid is not None
+        assert level is not None
+
         self._clear_generated_results()
         scenario = self._state.active_scenario
         try:
             building = self._service.get_building(faction, sid, level)
             statuses = self._service.get_prerequisite_statuses(
-                faction, sid, level, scenario=scenario
+                faction,
+                sid,
+                level,
+                scenario=scenario,
             )
             plan = self._service.generate_build_plan(
-                faction, sid, level, scenario=scenario
+                faction,
+                sid,
+                level,
+                scenario=scenario,
             )
-            cumulative_cost = self._service.get_cumulative_cost(
-                faction, sid, level, scenario=scenario
+            cost = self._service.get_cumulative_cost(
+                faction,
+                sid,
+                level,
+                scenario=scenario,
             )
-            build_orders = self._service.enumerate_build_orders(
-                faction, sid, level, scenario=scenario
+            orders = self._service.enumerate_build_orders(
+                faction,
+                sid,
+                level,
+                scenario=scenario,
             )
         except (QueryError, *SCENARIO_ERRORS) as exc:
-            self._show_scenario_error(exc)
+            self._show_error(exc)
             return
-        if cumulative_cost != plan.total_cost:
-            raise RuntimeError("Query Layer cumulative cost did not match the generated plan")
+
         self._state.store_results(
             building=building,
             prerequisite_statuses=statuses,
             plan=plan,
-            cumulative_cost=cumulative_cost,
-            build_orders=build_orders,
+            cumulative_cost=cost,
+            build_orders=orders,
         )
         self._view.show_target(building)
         self._view.show_prerequisites(statuses)
-        self._view.show_plan(plan, cumulative_cost)
-        mode = "canonical" if self._state.is_canonical_mode else "custom starting state"
-        self._set_status(
-            f"Build plan generated successfully in {mode} mode: "
-            f"{plan.build_actions} construction actions."
-        )
+        self._view.show_plan(plan, cost)
 
-    def _load_scenario_candidates(
-        self,
-        faction: str,
-        building_sids: tuple[str, ...],
-    ) -> tuple[BuildingLevel, ...]:
-        candidates = [
-            self._service.get_building(faction, sid, level)
-            for sid in building_sids
-            for level in self._service.list_building_levels(faction, sid)
-        ]
-        return tuple(sorted(candidates, key=lambda item: (item.key.sid, item.key.level)))
+    def _load_candidates(self, faction, sids):
+        return tuple(
+            sorted(
+                (
+                    self._service.get_building(faction, sid, level)
+                    for sid in sids
+                    for level in self._service.list_building_levels(
+                        faction,
+                        sid,
+                    )
+                ),
+                key=lambda item: (item.key.sid, item.key.level),
+            )
+        )
 
     def _clear_generated_results(self) -> None:
         self._state.clear_results()
         self._view.clear_results()
 
-    def _show_request_error(self, exc: Exception) -> None:
-        message = f"Request could not be completed: {exc}"
-        self._view.show_error(message)
-        self._set_status(message)
-
-    def _show_scenario_error(self, exc: Exception) -> None:
+    def _show_error(self, exc: Exception) -> None:
         self._state.clear_results()
-        message = f"Planning scenario could not be applied: {exc}"
+        message = f"Request could not be completed: {exc}"
         self._view.show_error(message)
         self._set_status(message)
