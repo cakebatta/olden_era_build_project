@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .constants import RESOURCE_NAMES
-from .models import BuildingKey, ResourceCost, UnitFamily
+from .models import BuildingKey, FactionCity, ResourceCost, UnitFamily
 from .planner import BuildPlan, GameDate
 from .recruitment_stock import RecruitmentStock
 
@@ -83,12 +83,22 @@ class ResourceLedger:
 
 
 def build_resource_ledger(
+    city: FactionCity,
     plan: BuildPlan,
     stock: RecruitmentStock,
     recruitment_actions: tuple[RecruitmentAction, ...],
     starting_resources: ResourceCost,
+    *,
+    starting_buildings: frozenset[BuildingKey] | None = None,
 ) -> ResourceLedger:
-    """Build a deterministic construction-and-recruitment resource ledger."""
+    """Build a deterministic construction-and-recruitment resource ledger.
+
+    ``starting_buildings=None`` derives canonical starting buildings from
+    ``city``. An explicitly supplied frozenset is authoritative, including an
+    empty set.
+    """
+    if not isinstance(city, FactionCity):
+        raise TypeError("city must be a FactionCity")
     if not isinstance(plan, BuildPlan):
         raise TypeError("plan must be a BuildPlan")
     if not isinstance(stock, RecruitmentStock):
@@ -97,8 +107,18 @@ def build_resource_ledger(
         raise TypeError("recruitment_actions must be a tuple")
     if not isinstance(starting_resources, ResourceCost):
         raise TypeError("starting_resources must be a ResourceCost")
-    if plan.faction != stock.faction:
-        raise ValueError("plan and recruitment stock factions do not match")
+    if starting_buildings is not None and not isinstance(starting_buildings, frozenset):
+        raise TypeError("starting_buildings must be a frozenset or None")
+    if city.faction != plan.faction or city.faction != stock.faction:
+        raise ValueError("city, plan, and recruitment stock factions must match")
+    if stock.starting_date != plan.starting_date:
+        raise ValueError("recruitment stock starting date must match plan")
+    for step in plan.steps:
+        if step.building not in city.buildings:
+            raise ValueError(f"Plan building is absent from city: {step.building}")
+
+    effective_starting = _resolve_starting_buildings(city, starting_buildings)
+
     if any(getattr(starting_resources, name) < 0 for name in RESOURCE_NAMES):
         raise ValueError("starting resources cannot contain negative values")
     if any(not isinstance(action, RecruitmentAction) for action in recruitment_actions):
@@ -120,12 +140,8 @@ def build_resource_ledger(
 
     ordered_actions = tuple(
         action
-        for _, action in sorted(
-            indexed_actions,
-            key=lambda item: (item[1].date.day_index, item[0]),
-        )
+        for _, action in sorted(indexed_actions, key=lambda item: (item[1].date.day_index, item[0]))
     )
-
     construction_events = {step.date: step for step in plan.steps}
     actions_by_date: dict[GameDate, list[RecruitmentAction]] = {}
     for action in ordered_actions:
@@ -135,7 +151,6 @@ def build_resource_ledger(
         [plan.completion_date.day_index, stock.through_date.day_index]
         + [action.date.day_index for action in ordered_actions]
     )
-
     balance = starting_resources
     construction_total = ResourceCost()
     recruitment_total = ResourceCost()
@@ -143,7 +158,7 @@ def build_resource_ledger(
     recruitment_entries: list[RecruitmentLedgerEntry] = []
     daily_balances: list[DailyResourceBalance] = []
     purchased: dict[BuildingKey, int] = {}
-    unlocked_level_2: set[tuple[str, str]] = set()
+    unlocked_level_2 = _initial_level_2_unlocks(effective_starting)
     first_deficit: ResourceDeficit | None = None
     event_index = 0
 
@@ -171,7 +186,6 @@ def build_resource_ledger(
                 raise ValueError(
                     f"Upgraded recruitment requires dwelling level 2: {action.dwelling}"
                 )
-
             baseline = stock.available(action.dwelling, date)
             already_purchased = purchased.get(action.dwelling, 0)
             stock_before = baseline - already_purchased
@@ -181,10 +195,8 @@ def build_resource_ledger(
                     f"Recruitment exceeds available stock for {action.dwelling} on {date}: "
                     f"requested {requested}, available {stock_before}"
                 )
-
             cost = _scale(family.base_cost, action.base_quantity) + _scale(
-                family.upgraded_cost,
-                action.upgraded_quantity,
+                family.upgraded_cost, action.upgraded_quantity
             )
             purchased[action.dwelling] = already_purchased + requested
             balance = balance - cost
@@ -203,7 +215,6 @@ def build_resource_ledger(
             )
             if first_deficit is None:
                 first_deficit = _deficit_for(balance, date, event_index)
-
         daily_balances.append(DailyResourceBalance(date, balance))
 
     combined_total = construction_total + recruitment_total
@@ -222,6 +233,37 @@ def build_resource_ledger(
         feasible=first_deficit is None,
         first_deficit=first_deficit,
     )
+
+
+def _resolve_starting_buildings(
+    city: FactionCity,
+    starting_buildings: frozenset[BuildingKey] | None,
+) -> frozenset[BuildingKey]:
+    if starting_buildings is None:
+        return frozenset(
+            key for key, building in city.buildings.items() if building.constructed_on_start
+        )
+    for key in starting_buildings:
+        if not isinstance(key, BuildingKey):
+            raise TypeError("starting_buildings must contain BuildingKey values")
+        if key.faction != city.faction:
+            raise ValueError(
+                f"Starting building faction {key.faction!r} does not match "
+                f"city faction {city.faction!r}: {key}"
+            )
+        if key not in city.buildings:
+            raise ValueError(f"Unknown starting building: {key}")
+    return starting_buildings
+
+
+def _initial_level_2_unlocks(
+    effective_starting: frozenset[BuildingKey],
+) -> set[tuple[str, str]]:
+    return {
+        (key.faction, key.sid)
+        for key in effective_starting
+        if key.level >= 2
+    }
 
 
 def _family_for(stock: RecruitmentStock, dwelling: BuildingKey, date: GameDate) -> UnitFamily:
