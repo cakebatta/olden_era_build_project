@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import inspect
 
 from olden_db.desktop import app
@@ -17,6 +18,32 @@ from olden_db.desktop.views.comparison_view import (
     comparison_layout_for_width,
 )
 from olden_db.models import ResourceCost
+
+
+def _uses_bind_all(callable_object: object) -> bool:
+    """Return True only for an actual bind_all(...) call in executable code."""
+
+    source = inspect.getsource(callable_object)
+    tree = ast.parse(source)
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+
+        function = node.func
+        if (
+            isinstance(function, ast.Attribute)
+            and function.attr == "bind_all"
+        ):
+            return True
+
+        if (
+            isinstance(function, ast.Name)
+            and function.id == "bind_all"
+        ):
+            return True
+
+    return False
 
 
 def main() -> None:
@@ -77,13 +104,14 @@ def main() -> None:
             "Shared scroll container does not support all wheel events"
         )
 
-    scrolling_source = inspect.getsource(
-        ScrollableWorkspace
-    )
-    if "bind_all" in scrolling_source:
+    if _uses_bind_all(ScrollableWorkspace):
         raise RuntimeError(
             "Scroll container uses a permanent global wheel binding"
         )
+
+    scrolling_source = inspect.getsource(
+        ScrollableWorkspace
+    )
     required_cleanup = (
         "activate",
         "deactivate",
@@ -120,10 +148,10 @@ def main() -> None:
         raise RuntimeError(
             "Primary comparison action is not retained"
         )
-    resize_source = inspect.getsource(
-        ComparisonView._on_configure
-    ) + inspect.getsource(
-        ComparisonView._apply_layout
+
+    resize_source = (
+        inspect.getsource(ComparisonView._on_configure)
+        + inspect.getsource(ComparisonView._apply_layout)
     )
     backend_fragments = (
         "service.",
