@@ -127,13 +127,13 @@ presentation remain client responsibilities.
 ## Resource Ledgers
 
 `generate_resource_ledger()` is the public Query Layer entry point for
-construction and recruitment accounting. It accepts a canonical faction and
-target, a starting date, an optional `PlanningScenario`, an immutable tuple of
-`RecruitmentAction` values, and an explicit starting `ResourceCost`.
+income-aware construction and recruitment accounting. It accepts a canonical
+faction and target, a starting date, an optional `PlanningScenario`, an
+immutable tuple of `RecruitmentAction` values, and an explicit starting
+`ResourceCost`.
 
-The Query Layer resolves the effective starting-building set exactly once. It
-then reuses that same immutable set for dependency-graph construction,
-`RecruitmentStock` generation, and `ResourceLedger` generation:
+The Query Layer resolves the effective starting-building set exactly once and
+reuses that same immutable set throughout the full orchestration pipeline:
 
 ```text
 PlanningScenario
@@ -142,19 +142,37 @@ PlanningScenario
 effective frozenset[BuildingKey]
         |
         +--> BuildPlan
+        +--> IncomeTimeline
         +--> RecruitmentStock
         +--> ResourceLedger
 ```
 
-Application clients do not receive or manage the effective starting set and do
-not construct intermediate stock objects. Recruitment actions dated after plan
-completion automatically extend stock coverage through the latest action date.
+The required evaluation horizon is the latest of the plan completion date and
+all recruitment-action dates. `IncomeTimeline` and `RecruitmentStock` are both
+generated through that same inclusive date, so they cannot describe different
+time ranges.
 
-The Query Layer delegates planning to the graph and planner modules, creature
-availability to `calculate_recruitment_stock()`, and accounting to
-`build_resource_ledger()`. It does not duplicate those algorithms. The returned
-ledger therefore guarantees one faction, one starting date, and one scenario
-across its plan, stock, and accounting data.
+Application clients do not receive or manage the effective starting set and do
+not construct intermediate plans, income timelines, stock objects, or ledgers.
+Deterministic town-building income is included automatically.
+
+The Query Layer delegates:
+
+- prerequisite traversal to the graph;
+- construction dates and costs to the planner;
+- income timing and source events to `calculate_income_timeline()`;
+- creature availability to `calculate_recruitment_stock()`;
+- balances, spending, feasibility, and deficits to `build_resource_ledger()`.
+
+It does not inspect `BuildingLevel.income`, reproduce income activation or
+upgrade replacement, reproduce stock progression, or duplicate accounting
+logic. The returned ledger therefore guarantees one faction, one scenario, one
+starting date, one effective starting state, and one evaluation horizon across
+its plan, income, stock, and accounting data.
+
+The automatic income model includes only certified deterministic town-building
+income. It excludes map pickups, mines, combat rewards, user-dated external
+income, and other uncertain income sources.
 
 ## Version 1.0 Public Contract
 
@@ -264,4 +282,5 @@ python -m scripts.test_query_scenarios
 python -m scripts.test_query_comparison
 python -m scripts.test_query_decision_summary
 python -m scripts.test_query_resource_ledger
+python -m scripts.test_query_income_resource_ledger
 ```

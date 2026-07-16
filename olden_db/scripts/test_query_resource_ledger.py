@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from olden_db.database import load_default_game_data
 from olden_db.graph import build_dependency_graph, iter_topological_orders
+from olden_db.income_timeline import calculate_income_timeline
 from olden_db.models import BuildingKey, ResourceCost
 from olden_db.planner import GameDate, plan_build_order
 from olden_db.query import (
@@ -50,6 +51,12 @@ def main() -> None:
         raise RuntimeError("Canonical ledger returned the wrong starting date")
     if canonical.stock.starting_date != starting_date:
         raise RuntimeError("Canonical stock and plan starting dates differed")
+    if canonical.income_timeline is None:
+        raise RuntimeError("Query Layer did not generate an IncomeTimeline")
+    if canonical.income_timeline.starting_date != starting_date:
+        raise RuntimeError("Income timeline and plan starting dates differed")
+    if canonical.income_total != canonical.income_timeline.total_income:
+        raise RuntimeError("Ledger income total differed from its timeline")
 
     scenario = PlanningScenario(
         (
@@ -102,7 +109,8 @@ def main() -> None:
     print("Canonical ledger generation succeeded.")
     print("Scenario ledger generation reused one effective starting state.")
     print("Query Layer output matched direct backend composition.")
-    print("Plan, stock, and ledger shared faction and starting-date context.")
+    print("Plan, income, stock, and ledger shared faction and starting-date context.")
+    print("Deterministic town income was included automatically.")
     print("Recruitment actions were coordinated through stock and ledger generation.")
     print("Repeated results were deterministic.")
     print("Existing Query Layer and scenario errors propagated unchanged.")
@@ -137,6 +145,12 @@ def _direct_composition(
     for action in actions:
         if action.date.day_index > through_date.day_index:
             through_date = action.date
+    income_timeline = calculate_income_timeline(
+        city,
+        plan,
+        through_date=through_date,
+        starting_buildings=effective,
+    )
     stock = calculate_recruitment_stock(
         city,
         plan,
@@ -150,6 +164,7 @@ def _direct_composition(
         actions,
         starting_resources,
         starting_buildings=effective,
+        income_timeline=income_timeline,
     )
 
 

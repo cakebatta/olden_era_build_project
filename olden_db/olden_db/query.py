@@ -6,6 +6,7 @@ from .comparison import PlanComparison, compare_build_plans
 from .database import LoadedGameData, load_default_game_data
 from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
+from .income_timeline import calculate_income_timeline
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
 from .planner import BuildPlan, GameDate, plan_build_order
 from .recruitment_stock import calculate_recruitment_stock
@@ -220,7 +221,7 @@ class PlanningQueryService:
         starting_date: GameDate = GameDate(1, 1, 1),
         scenario: PlanningScenario | None = None,
     ) -> ResourceLedger:
-        """Generate one scenario-consistent construction/recruitment ledger."""
+        """Generate one scenario-consistent income, construction, and recruitment ledger."""
         city = self._get_city(faction)
         building = self.get_building(faction, sid, level)
         effective_starting = self._effective_starting_buildings(city, scenario)
@@ -246,6 +247,12 @@ class PlanningQueryService:
             ):
                 through_date = action.date
 
+        income_timeline = calculate_income_timeline(
+            city,
+            plan,
+            through_date=through_date,
+            starting_buildings=effective_starting,
+        )
         stock = calculate_recruitment_stock(
             city,
             plan,
@@ -259,6 +266,7 @@ class PlanningQueryService:
             recruitment_actions,
             starting_resources,
             starting_buildings=effective_starting,
+            income_timeline=income_timeline,
         )
 
     def _get_city(self, faction: str) -> FactionCity:
