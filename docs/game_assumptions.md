@@ -21,49 +21,26 @@ These rules are directly supported by the canonical parsed assets:
 - Multiple valid topological build orders may exist.
 - Localization never replaces internal SIDs.
 - Every supported playable faction has one dwelling-linked `UnitFamily` for each tier from 1 through 7.
-- Every dwelling-linked `UnitFamily` contains:
-  - one base-unit SID;
-  - two distinct upgraded-unit SIDs;
-  - a positive base weekly-growth value;
-  - a non-zero base recruitment cost;
-  - a non-zero upgraded recruitment cost.
+- Every dwelling-linked `UnitFamily` contains one base-unit SID, two distinct upgraded-unit SIDs, positive weekly growth, and non-zero recruitment costs.
 - Both upgraded-unit alternatives in each dwelling family have identical recruitment costs.
 - Each recruitment dwelling has building levels 1 and 2.
-- The city assets attach one shared `UnitFamily` to the dwelling definition rather than separately encoding recruitment access by dwelling level.
-- The assets do not independently specify whether level 1 permits only base recruitment or whether level 2 unlocks upgraded recruitment.
-
-### Town-building income data
-
-The canonical city assets encode town-building resource production through
-`sideRes` bonus entries.
-
-- A `sideRes` entry identifies the produced resource and amount.
-- Baseline building effects appear in `bonusesPerLevel`.
-- Selectable or optional building effects may also contain `sideRes` entries in
-  `optionalEffectsPerLevel`; these must not be silently treated as guaranteed
-  baseline income.
-- Building upgrades may change the amount produced by providing a different
-  `sideRes` value for each building level.
-- The raw bonus entries do not explicitly encode a daily or weekly frequency.
-- The raw bonus entries do not explicitly encode whether production occurs on
-  the construction-completion day.
-- The raw bonus entries do not explicitly encode delayed activation,
-  accumulation, or external production modifiers.
-- The current `BuildingLevel` parsed model does not retain `bonusesPerLevel`,
-  `optionalEffectsPerLevel`, or normalized income data. Therefore current parser
-  coverage is insufficient for deterministic town-income gameplay without a
-  future, separately authorized parser/model extension.
-
-The focused income-data validation script inventories all baseline and optional
-`sideRes` entries by faction, building SID, level, resource, and amount. Its
-runtime output is the canonical completeness report for the currently included
-game assets.
+- The city assets attach one shared `UnitFamily` to the dwelling definition.
+- Certified baseline income effects identify a resource and level-specific amount.
+- `BuildingLevel.income` retains that baseline amount as a normalized `ResourceCost` vector.
+- The income amount does not establish cadence, activation delay, or construction-day production.
 
 ## Project-Owner Gameplay Assumptions
 
-The following deterministic gameplay rules were supplied by the Project Owner.
-They are canonical project assumptions but are not independently encoded in the
-currently parsed city and unit assets.
+The following deterministic gameplay rules are canonical project assumptions
+but are not independently encoded in the parsed assets.
+
+### Building income timing
+
+- A completed income building begins generating its retained income amount on the following day.
+- It continues generating that amount daily while available.
+
+These timing assumptions are deliberately separate from the asset-derived
+`BuildingLevel.income` amount.
 
 ### Initial stock
 
@@ -85,27 +62,15 @@ currently parsed city and unit assets.
 
 - Base and upgraded recruitment consume one shared dwelling stock.
 - Dwelling level 2 unlocks upgraded recruitment.
-- The two upgraded-unit alternatives share the same dwelling level and do not require separate buildings.
+- The two upgraded-unit alternatives share the same dwelling level.
 - Any mixture of base and upgraded creatures may be recruited from available shared stock.
-- Already recruited base units may be upgraded for the difference between the upgraded and base unit costs.
-- Recruitment and upgrading may occur on the same day that required construction completes.
+- Already recruited base units may be upgraded for the cost difference.
+- Recruitment and upgrading may occur on the same day required construction completes.
 - Recruitment is optional.
-
-### Town-building income timing
-
-- Town-building income begins on the day after construction completes.
-- A building completed on day 111 produces no income on day 111 and begins
-  producing on day 112.
-- Unless a future asset audit finds explicit frequency metadata elsewhere,
-  production frequency and other income-timing behavior remain project-level
-  gameplay assumptions rather than parser-derived facts.
 
 ## Modelling Boundaries
 
-- Resource pickups are random and are intentionally excluded from modelling.
-- The planner should optimize for efficient and adaptable build paths rather than predicting map economy.
-- Recruitment stock progression, recruitment spending, and unit upgrading should remain deterministic and should consume the verified `UnitFamily` data without reinterpreting raw asset layout.
-- Income gameplay must not infer optional `sideRes` choices as mandatory income.
-- A future parser extension should translate raw income definitions into an
-  explicit backend data structure; the Resource Ledger should not inspect raw
-  JSON asset layout directly.
+- Resource pickups are random and excluded from modelling.
+- Building-income cadence and activation belong to the future IncomeTimeline domain, not the parser.
+- The parser retains only authoritative income amounts.
+- Recruitment stock, spending, upgrading, and income timing remain separate deterministic domains.
