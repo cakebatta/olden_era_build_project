@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import defaultdict
+
 from olden_db.constants import RESOURCE_NAMES
 from olden_db.models import ResourceCost
 from olden_db.query import ResourceLedger
@@ -14,12 +16,44 @@ def format_resource_vector(resources: ResourceCost) -> str:
     )
 
 
+def _ordered_events(ledger: ResourceLedger) -> tuple[tuple[str, object], ...]:
+    construction_by_date = {
+        entry.date: entry for entry in ledger.construction_entries
+    }
+    recruitment_by_date: dict[object, list[object]] = defaultdict(list)
+    for entry in ledger.recruitment_entries:
+        recruitment_by_date[entry.date].append(entry)
+
+    events: list[tuple[str, object]] = []
+    for daily in ledger.daily_balances:
+        construction = construction_by_date.get(daily.date)
+        if construction is not None:
+            events.append(("Construction", construction))
+        events.extend(
+            ("Recruitment", entry)
+            for entry in recruitment_by_date.get(daily.date, ())
+        )
+    return tuple(events)
+
+
+def _deficit_trigger(ledger: ResourceLedger) -> str:
+    deficit = ledger.first_deficit
+    if deficit is None:
+        return ""
+    events = _ordered_events(ledger)
+    index = deficit.entry_index - 1
+    return events[index][0] if 0 <= index < len(events) else "Unknown"
+
+
 def format_resource_ledger(ledger: ResourceLedger) -> str:
     construction_by_date = {
         entry.date: entry for entry in ledger.construction_entries
     }
-    sections: list[str] = []
+    recruitment_by_date: dict[object, list[object]] = defaultdict(list)
+    for entry in ledger.recruitment_entries:
+        recruitment_by_date[entry.date].append(entry)
 
+    sections: list[str] = []
     for daily in ledger.daily_balances:
         lines = [format_game_date(daily.date)]
         if daily.date.day == 1:
@@ -27,12 +61,7 @@ def format_resource_ledger(ledger: ResourceLedger) -> str:
 
         construction = construction_by_date.get(daily.date)
         if construction is None:
-            lines.extend(
-                (
-                    "Construction events: None",
-                    "Construction cost: None",
-                )
-            )
+            lines.append("Construction events: None")
         else:
             lines.extend(
                 (
@@ -42,6 +71,25 @@ def format_resource_ledger(ledger: ResourceLedger) -> str:
                     f"{format_resource_vector(construction.cost)}",
                 )
             )
+
+        recruitment = recruitment_by_date.get(daily.date, ())
+        if not recruitment:
+            lines.append("Recruitment events: None")
+        else:
+            for entry in recruitment:
+                action = entry.action
+                lines.extend(
+                    (
+                        "Recruitment event: "
+                        f"{format_building_key(action.dwelling)}",
+                        f"  Base quantity: {action.base_quantity}",
+                        f"  Upgraded quantity: {action.upgraded_quantity}",
+                        "  Recruitment cost: "
+                        f"{format_resource_vector(entry.cost)}",
+                        f"  Stock before: {entry.stock_before}",
+                        f"  Stock after: {entry.stock_after}",
+                    )
+                )
 
         lines.append(
             "Closing balance: "
@@ -72,7 +120,7 @@ def format_resource_ledger(ledger: ResourceLedger) -> str:
                 f"Resource: {deficit.resource}",
                 f"Signed balance: {deficit.balance}",
                 f"Deficit magnitude: {-deficit.balance}",
-                "Triggering entry: Construction",
+                f"Triggering entry: {_deficit_trigger(ledger)}",
             )
         )
 
