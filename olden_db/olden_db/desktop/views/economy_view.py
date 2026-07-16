@@ -17,22 +17,22 @@ from ..formatting import (
     format_planning_mode,
 )
 
+QUANTITY_SLIDER_MAXIMUM = 9999
+
 
 class _QuantityControl(ttk.Frame):
-    """One quantity represented by a synchronized slider and spinbox."""
+    """One non-negative quantity with synchronized slider and spinbox."""
 
     def __init__(
         self,
         parent,
         *,
         label: str,
-        maximum: int,
         enabled: bool,
         initial: int,
         on_change: Callable[[int], None],
     ) -> None:
         super().__init__(parent)
-        self._maximum = maximum
         self._on_change = on_change
         self._ready = False
         self._changing = False
@@ -46,28 +46,23 @@ class _QuantityControl(ttk.Frame):
         self._scale = ttk.Scale(
             self,
             from_=0,
-            to=maximum,
+            to=QUANTITY_SLIDER_MAXIMUM,
             orient="horizontal",
             command=self._scale_changed,
         )
-        self._scale.grid(
-            row=0,
-            column=1,
-            sticky="ew",
-            padx=5,
-        )
+        self._scale.grid(row=0, column=1, sticky="ew", padx=5)
         self._spinbox = ttk.Spinbox(
             self,
             from_=0,
-            to=maximum,
+            to=QUANTITY_SLIDER_MAXIMUM,
             textvariable=self._var,
-            width=6,
+            width=7,
             command=self._spinbox_changed,
         )
         self._spinbox.grid(row=0, column=2)
         self.columnconfigure(1, weight=1)
 
-        self._scale.set(initial)
+        self._scale.set(min(initial, QUANTITY_SLIDER_MAXIMUM))
         self._var.trace_add("write", self._entry_changed)
         self._ready = True
         self.set_enabled(enabled)
@@ -79,18 +74,12 @@ class _QuantityControl(ttk.Frame):
             return 0
 
     def set_value(self, value: int) -> None:
-        value = max(0, min(self._maximum, value))
         self._changing = True
         self._var.set(value)
-        self._scale.set(value)
+        self._scale.set(
+            max(0, min(value, QUANTITY_SLIDER_MAXIMUM))
+        )
         self._changing = False
-
-    def set_maximum(self, maximum: int) -> None:
-        self._maximum = max(0, maximum)
-        self._scale.configure(to=self._maximum)
-        self._spinbox.configure(to=self._maximum)
-        if self.value() > self._maximum:
-            self.set_value(self._maximum)
 
     def set_enabled(self, enabled: bool) -> None:
         state = "normal" if enabled else "disabled"
@@ -100,13 +89,7 @@ class _QuantityControl(ttk.Frame):
     def _scale_changed(self, raw_value: str) -> None:
         if not self._ready or self._changing:
             return
-        value = max(
-            0,
-            min(
-                self._maximum,
-                int(round(float(raw_value))),
-            ),
-        )
+        value = max(0, int(round(float(raw_value))))
         if value == self.value():
             return
         self._changing = True
@@ -126,30 +109,28 @@ class _QuantityControl(ttk.Frame):
         if self._changing:
             return
         value = self.value()
-        if 0 <= value <= self._maximum:
+        if value >= 0:
             self._changing = True
-            self._scale.set(value)
+            self._scale.set(
+                min(value, QUANTITY_SLIDER_MAXIMUM)
+            )
             self._changing = False
         self._on_change(value)
 
 
 class _RecruitmentRow:
-    """Widgets and mutable presentation state for one dated dwelling row."""
+    """Widgets for one backend-provided dated dwelling entry."""
 
     def __init__(
         self,
         parent,
         *,
-        ledger: ResourceLedger,
         stock_entry,
         initial: RecruitmentSelection,
         on_change,
     ) -> None:
         self.date = stock_entry.date
         self.dwelling = stock_entry.dwelling
-        self._baseline_available = stock_entry.available
-        self._maximum = stock_entry.available
-
         self.frame = ttk.LabelFrame(
             parent,
             text=(
@@ -160,15 +141,18 @@ class _RecruitmentRow:
         )
         self.frame.columnconfigure(0, weight=1)
 
-        self.available_var = tk.StringVar()
-        self.remaining_var = tk.StringVar()
         ttk.Label(
             self.frame,
-            textvariable=self.available_var,
+            text=(
+                "Backend-reported available stock: "
+                f"{stock_entry.available}"
+            ),
         ).grid(row=0, column=0, sticky="w")
+
+        self.requested_var = tk.StringVar()
         ttk.Label(
             self.frame,
-            textvariable=self.remaining_var,
+            textvariable=self.requested_var,
         ).grid(row=0, column=1, sticky="e")
 
         controls: dict[str, _QuantityControl] = {}
@@ -184,7 +168,6 @@ class _RecruitmentRow:
         controls["base"] = _QuantityControl(
             self.frame,
             label=stock_entry.unit_family.base_sid,
-            maximum=stock_entry.available,
             enabled=True,
             initial=initial.base_quantity,
             on_change=emit,
@@ -196,16 +179,10 @@ class _RecruitmentRow:
             sticky="ew",
         )
 
-        upgrade_available = EconomyTimelineView.upgrade_available(
-            ledger,
-            stock_entry.date,
-            stock_entry.dwelling,
-        )
         controls["upgraded"] = _QuantityControl(
             self.frame,
             label="Upgraded units",
-            maximum=stock_entry.available,
-            enabled=upgrade_available,
+            enabled=True,
             initial=initial.upgraded_quantity,
             on_change=emit,
         )
@@ -216,53 +193,33 @@ class _RecruitmentRow:
             sticky="ew",
         )
 
-        if not upgrade_available:
-            ttk.Label(
-                self.frame,
-                text=(
-                    "Upgraded recruitment is unavailable because "
-                    "dwelling level 2 is not available on this date."
-                ),
-            ).grid(
-                row=3,
-                column=0,
-                columnspan=2,
-                sticky="w",
-            )
+        ttk.Label(
+            self.frame,
+            text=(
+                "Recruitment legality and upgrade availability "
+                "are validated when the timeline is generated."
+            ),
+        ).grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            sticky="w",
+        )
 
         self.base = controls["base"]
         self.upgraded = controls["upgraded"]
-        self.apply(
-            maximum=stock_entry.available,
-            selection=initial,
-        )
+        self.apply(initial)
 
-    @property
-    def baseline_available(self) -> int:
-        return self._baseline_available
-
-    def apply(
-        self,
-        *,
-        maximum: int,
-        selection: RecruitmentSelection,
-    ) -> None:
-        self._maximum = max(0, maximum)
-        self.base.set_maximum(self._maximum)
-        self.upgraded.set_maximum(self._maximum)
+    def apply(self, selection: RecruitmentSelection) -> None:
         self.base.set_value(selection.base_quantity)
         self.upgraded.set_value(selection.upgraded_quantity)
-        remaining = (
-            self._maximum
-            - selection.base_quantity
-            - selection.upgraded_quantity
+        self.requested_var.set(
+            f"Requested total: {selection.total_quantity}"
         )
-        self.available_var.set(f"Available stock: {self._maximum}")
-        self.remaining_var.set(f"Remaining stock: {remaining}")
 
 
 class EconomyTimelineView(ttk.Frame):
-    """Treasury, recruitment controls, and authoritative ledger results."""
+    """Treasury, recruitment requests, and authoritative ledger results."""
 
     def __init__(self, parent: tk.Misc) -> None:
         super().__init__(parent, padding=16)
@@ -518,7 +475,6 @@ class EconomyTimelineView(ttk.Frame):
         for stock_entry in ledger.stock.entries:
             if stock_entry.available <= 0:
                 continue
-
             key = (
                 stock_entry.date,
                 stock_entry.dwelling,
@@ -532,7 +488,6 @@ class EconomyTimelineView(ttk.Frame):
             )
             row = _RecruitmentRow(
                 self._schedule_content,
-                ledger=ledger,
                 stock_entry=stock_entry,
                 initial=selection,
                 on_change=self._on_recruitment_changed,
@@ -551,45 +506,27 @@ class EconomyTimelineView(ttk.Frame):
             ttk.Label(
                 self._schedule_content,
                 text=(
-                    "No creatures are available during "
-                    "this ledger."
+                    "No backend recruitment entries are available "
+                    "for this ledger."
                 ),
             ).grid(row=0, column=0, sticky="w")
 
-        self.apply_recruitment_state(
-            ledger,
-            selections,
-        )
+        self.apply_recruitment_state(selections)
 
     def apply_recruitment_state(
         self,
-        ledger: ResourceLedger,
         selections: tuple[RecruitmentSelection, ...],
     ) -> None:
         selected = {
             (item.date, item.dwelling): item
             for item in selections
         }
-
         for key, row in self._rows.items():
-            date, dwelling = key
-            prior_purchases = sum(
-                item.total_quantity
-                for item in selections
-                if item.dwelling == dwelling
-                and item.date.day_index < date.day_index
-            )
-            maximum = max(
-                0,
-                row.baseline_available - prior_purchases,
-            )
-            selection = selected.get(
-                key,
-                RecruitmentSelection(date, dwelling),
-            )
             row.apply(
-                maximum=maximum,
-                selection=selection,
+                selected.get(
+                    key,
+                    RecruitmentSelection(*key),
+                )
             )
 
     def clear_recruitment_controls(self) -> None:
@@ -599,7 +536,7 @@ class EconomyTimelineView(ttk.Frame):
             self._schedule_content,
             text=(
                 "Generate the Economy Timeline once to load "
-                "authoritative recruitment availability."
+                "backend-provided recruitment dates and dwellings."
             ),
         ).grid(row=0, column=0, sticky="w")
 
@@ -635,28 +572,6 @@ class EconomyTimelineView(ttk.Frame):
         self._replace(
             "Unable to Generate Economy Timeline\n"
             + message
-        )
-
-    @staticmethod
-    def upgrade_available(
-        ledger: ResourceLedger,
-        date: GameDate,
-        dwelling: BuildingKey,
-    ) -> bool:
-        level_two = BuildingKey(
-            dwelling.faction,
-            dwelling.sid,
-            2,
-        )
-        return any(
-            step.building == level_two
-            and step.date.day_index <= date.day_index
-            for step in ledger.plan.steps
-        ) or any(
-            entry.action.dwelling == dwelling
-            and entry.date == date
-            and entry.action.upgraded_quantity > 0
-            for entry in ledger.recruitment_entries
         )
 
     def _emit_resources(self) -> None:
