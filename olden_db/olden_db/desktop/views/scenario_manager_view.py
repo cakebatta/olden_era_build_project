@@ -15,11 +15,11 @@ class ScenarioManagerView(ttk.Frame):
         for i,(label,key) in enumerate(self.COMMANDS):
             ttk.Button(bar,text=label,command=lambda k=key:self._invoke(k)).grid(row=0,column=i,padx=(0,3))
         box=ttk.LabelFrame(self,text="Scenario Document",padding=6);box.grid(row=2,column=0,sticky="ew");box.columnconfigure(1,weight=1)
-        self._name=tk.StringVar();self._description=tk.StringVar()
-        ttk.Label(box,text="Name").grid(row=0,column=0,sticky="w");ttk.Entry(box,textvariable=self._name).grid(row=0,column=1,sticky="ew")
-        ttk.Label(box,text="Description").grid(row=1,column=0,sticky="w");ttk.Entry(box,textvariable=self._description).grid(row=1,column=1,sticky="ew")
+        self._name_var=tk.StringVar();self._description_var=tk.StringVar()
+        ttk.Label(box,text="Name").grid(row=0,column=0,sticky="w");ttk.Entry(box,textvariable=self._name_var).grid(row=0,column=1,sticky="ew")
+        ttk.Label(box,text="Description").grid(row=1,column=0,sticky="w");ttk.Entry(box,textvariable=self._description_var).grid(row=1,column=1,sticky="ew")
         ttk.Label(box,text="Notes").grid(row=2,column=0,sticky="nw");self._notes=tk.Text(box,height=3,wrap="word");self._notes.grid(row=2,column=1,sticky="ew")
-        self._name.trace_add("write",self._edited);self._description.trace_add("write",self._edited);self._notes.bind("<KeyRelease>",self._edited)
+        self._name_var.trace_add("write",self._edited);self._description_var.trace_add("write",self._edited);self._notes.bind("<KeyRelease>",self._edited)
     def set_handlers(self,**handlers): self._handlers=handlers
     def _invoke(self,key):
         if key in self._handlers:self._handlers[key]()
@@ -27,9 +27,9 @@ class ScenarioManagerView(ttk.Frame):
     def apply_metadata(self,name,description,notes):
         self._suspend=True
         try:
-            self._name.set(name);self._description.set(description);self._notes.delete("1.0","end");self._notes.insert("1.0",notes)
+            self._name_var.set(name);self._description_var.set(description);self._notes.delete("1.0","end");self._notes.insert("1.0",notes)
         finally:self._suspend=False
-    def metadata(self): return self._name.get(),self._description.get(),self._notes.get("1.0","end-1c")
+    def metadata(self): return self._name_var.get(),self._description_var.get(),self._notes.get("1.0","end-1c")
     def _edited(self,*_):
         if not self._suspend and "edited" in self._handlers:self._handlers["edited"]()
     def choose_unsaved_action(self,name):
