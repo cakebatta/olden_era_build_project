@@ -14,7 +14,7 @@ from .app_paths import application_data_root
 from .comparison_state import ComparisonState
 from .economy_state import EconomyTimelineState
 from .presenters.comparison_presenter import ComparisonPresenter
-from .scenario_controller import ScenarioController
+from .inline_validation_controller import InlineValidationScenarioController
 from .scenario_presenters import (
     ScenarioAwareEconomyPresenter,
     ScenarioAwarePlannerPresenter,
@@ -30,6 +30,17 @@ from .views.scenario_manager_view import ScenarioManagerView
 APPLICATION_TITLE = "Olden Era Build Planner"
 DEFAULT_ROOT_GEOMETRY = "1100x700"
 ROOT_MINIMUM_SIZE = (960, 640)
+
+
+def scenario_shortcut_bindings(windowing_system: str):
+    """Return platform-appropriate lifecycle shortcut registrations."""
+    modifier = "Command" if windowing_system == "aqua" else "Control"
+    return (
+        (f"<{modifier}-n>", "new"),
+        (f"<{modifier}-o>", "open"),
+        (f"<{modifier}-s>", "save"),
+        (f"<{modifier}-Shift-S>", "save_as"),
+    )
 
 
 class DesktopApplication:
@@ -52,6 +63,7 @@ class DesktopApplication:
             comparison_view,
             economy_view,
         ) = self._shell()
+        self.scenario_manager_view = manager_view
 
         planner_state = PlannerState()
         economy_state = EconomyTimelineState()
@@ -88,7 +100,7 @@ class DesktopApplication:
                 )
             ),
         )
-        self.scenario_controller = ScenarioController(
+        self.scenario_controller = InlineValidationScenarioController(
             repository,
             planner_state,
             economy_state,
@@ -121,22 +133,21 @@ class DesktopApplication:
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
     def _bind_shortcuts(self) -> None:
-        self.root.bind_all(
-            "<Control-n>",
-            lambda _event: self.scenario_controller.new(),
-        )
-        self.root.bind_all(
-            "<Control-o>",
-            lambda _event: self.scenario_controller.open(),
-        )
-        self.root.bind_all(
-            "<Control-s>",
-            lambda _event: self.scenario_controller.save(),
-        )
-        self.root.bind_all(
-            "<Control-Shift-S>",
-            lambda _event: self.scenario_controller.save_as(),
-        )
+        windowing_system = self.root.tk.call("tk", "windowingsystem")
+        for sequence, command in scenario_shortcut_bindings(
+            windowing_system
+        ):
+            self.root.bind_all(
+                sequence,
+                lambda _event, key=command: (
+                    self._dispatch_scenario_command(key)
+                ),
+            )
+
+    def _dispatch_scenario_command(self, key):
+        """Route a shortcut through the same view intent as visible commands."""
+        self.scenario_manager_view.invoke_command(key)
+        return "break"
 
     def _shell(
         self,
