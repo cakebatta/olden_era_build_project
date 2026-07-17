@@ -3,6 +3,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from olden_db.database import LoadedGameData, load_default_game_data
 from olden_db.query import PlanningQueryService
 from olden_db.scenario_persistence import (
     LocalScenarioRepository,
@@ -38,6 +39,7 @@ class DesktopApplication:
         self,
         root: tk.Tk,
         service: PlanningQueryService,
+        canonical_data: LoadedGameData,
     ) -> None:
         self.root = root
         self.status_text = tk.StringVar(value="Starting…")
@@ -82,7 +84,7 @@ class DesktopApplication:
             canonical_validator=lambda document: (
                 validate_document_against_game_data(
                     document,
-                    service._data,
+                    canonical_data,
                 )
             ),
         )
@@ -290,7 +292,8 @@ def run_desktop_application() -> None:
     root = tk.Tk()
     root.withdraw()
     try:
-        service = PlanningQueryService.from_default_game_data()
+        canonical_data = load_default_game_data()
+        service = PlanningQueryService(canonical_data)
     except (FileNotFoundError, OSError, ValueError) as exc:
         messagebox.showerror(
             APPLICATION_TITLE,
@@ -302,6 +305,6 @@ def run_desktop_application() -> None:
         root.destroy()
         return
 
-    DesktopApplication(root, service)
+    DesktopApplication(root, service, canonical_data)
     root.deiconify()
     root.mainloop()

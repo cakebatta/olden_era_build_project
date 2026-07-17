@@ -9,6 +9,7 @@ from olden_db.scenario_document_export import export_scenario_document
 from olden_db.scenario_persistence import (
     LocalScenarioRepository,
     ScenarioConflictError,
+    ScenarioDocumentValidationError,
     ScenarioPersistenceError,
     create_scenario_document,
     duplicate_scenario_document,
@@ -16,6 +17,13 @@ from olden_db.scenario_persistence import (
 )
 
 from .scenario_session import ScenarioSession, ScenarioSource
+
+
+EXPECTED_EDIT_ERRORS = (
+    ValueError,
+    TypeError,
+    ScenarioDocumentValidationError,
+)
 
 
 class ScenarioController:
@@ -43,13 +51,6 @@ class ScenarioController:
         self._applying = False
 
     def _timestamp(self) -> datetime:
-        """Return a persistence-compatible clock value.
-
-        Scenario persistence Version 1 intentionally stores whole-second UTC
-        timestamps. The desktop clock boundary removes fractional seconds
-        before passing time into persistence services.
-        """
-
         return self.now().replace(microsecond=0)
 
     def initialize(self):
@@ -84,6 +85,7 @@ class ScenarioController:
     def _protect(self):
         if not self.session or not self.session.has_unsaved_risk:
             return True
+
         action = self.view.choose_unsaved_action(
             self.session.display_name.rstrip(" *")
         )
@@ -98,13 +100,14 @@ class ScenarioController:
             return False
         try:
             document = self._default_document()
-            self.session = ScenarioSession(document)
-            self._apply(document, False)
-            self._refresh()
-            self.set_status("New unsaved scenario created.")
-            return True
         except Exception as exc:
             return self._fail("New scenario", exc)
+
+        self.session = ScenarioSession(document)
+        self._apply(document, False)
+        self._refresh()
+        self.set_status("New unsaved scenario created.")
+        return True
 
     def open(self):
         if not self._protect():
@@ -116,22 +119,26 @@ class ScenarioController:
             if chosen is None:
                 return False
             loaded = self.repository.get_scenario(chosen.scenario_id)
-            self.session = ScenarioSession(loaded.document)
-            self.session.accept_loaded(
-                loaded.document,
-                loaded.conflict_token,
-            )
-            self._apply(loaded.document, True)
-            self._refresh()
-            return True
         except Exception as exc:
             return self._fail("Open", exc)
+
+        self.session = ScenarioSession(loaded.document)
+        self.session.accept_loaded(
+            loaded.document,
+            loaded.conflict_token,
+        )
+        self._apply(loaded.document, True)
+        self._refresh()
+        return True
 
     def save(self):
         if not self.session:
             return False
+        document = self._candidate("Save")
+        if document is None:
+            return False
+
         try:
-            document = self._build()
             result = self.repository.save_scenario(
                 document,
                 expected_token=(
@@ -141,16 +148,6 @@ class ScenarioController:
                 ),
                 now=self._timestamp(),
             )
-            self.session.accept_saved(
-                result.document,
-                result.conflict_token,
-            )
-            self._apply_metadata(result.document)
-            self._refresh()
-            self.set_status(
-                f"Saved scenario: {result.document.name}."
-            )
-            return True
         except ScenarioConflictError as exc:
             self._fail("Save", exc)
             return (
@@ -161,16 +158,27 @@ class ScenarioController:
         except Exception as exc:
             return self._fail("Save", exc)
 
+        self.session.accept_saved(
+            result.document,
+            result.conflict_token,
+        )
+        self._apply_metadata(result.document)
+        self._refresh()
+        self.set_status(f"Saved scenario: {result.document.name}.")
+        return True
+
     def save_as(self):
         document = self._candidate("Save As")
         if document is None:
             return False
+
         name = self.view.ask_name(
             "Save Scenario As",
             document.name,
         )
         if name is None:
             return False
+
         try:
             timestamp = self._timestamp()
             copied = duplicate_scenario_document(
@@ -183,46 +191,54 @@ class ScenarioController:
                 expected_token=None,
                 now=timestamp,
             )
-            self.session = ScenarioSession(result.document)
-            self.session.accept_saved(
-                result.document,
-                result.conflict_token,
-            )
-            self._apply(result.document, True)
-            self._refresh()
-            return True
         except Exception as exc:
             return self._fail("Save As", exc)
+
+        self.session = ScenarioSession(result.document)
+        self.session.accept_saved(
+            result.document,
+            result.conflict_token,
+        )
+        self._apply(result.document, True)
+        self._refresh()
+        return True
 
     def rename(self):
         document = self._candidate("Rename")
         if document is None:
             return False
+
         name = self.view.ask_name(
             "Rename Scenario",
             document.name,
         )
         if name is None:
             return False
+
         try:
             renamed = rename_scenario_document(document, name)
-            self.session.update_candidate(renamed)
-            self._apply_metadata(renamed)
-            self._refresh()
-            return True
         except Exception as exc:
             return self._fail("Rename", exc)
+
+        self.session.mark_ui_edited()
+        self.session.update_candidate(renamed)
+        self.session.reconcile_dirty_state()
+        self._apply_metadata(renamed)
+        self._refresh()
+        return True
 
     def duplicate(self):
         document = self._candidate("Duplicate")
         if document is None:
             return False
+
         name = self.view.ask_name(
             "Duplicate Scenario",
             f"{document.name} Copy",
         )
         if name is None:
             return False
+
         try:
             timestamp = self._timestamp()
             copied = duplicate_scenario_document(
@@ -235,16 +251,17 @@ class ScenarioController:
                 expected_token=None,
                 now=timestamp,
             )
-            self.session = ScenarioSession(result.document)
-            self.session.accept_saved(
-                result.document,
-                result.conflict_token,
-            )
-            self._apply(result.document, True)
-            self._refresh()
-            return True
         except Exception as exc:
             return self._fail("Duplicate", exc)
+
+        self.session = ScenarioSession(result.document)
+        self.session.accept_saved(
+            result.document,
+            result.conflict_token,
+        )
+        self._apply(result.document, True)
+        self._refresh()
+        return True
 
     def delete(self):
         if (
@@ -255,59 +272,66 @@ class ScenarioController:
                 "The active scenario is not stored in the local library."
             )
             return False
+
         document = self._candidate("Delete")
-        if (
-            document is None
-            or not self.view.confirm_delete(document.name)
-        ):
+        if document is None:
             return False
+        if not self.view.confirm_delete(document.name):
+            return False
+
         try:
             self.repository.delete_scenario(
                 document.scenario_id,
                 expected_token=self.session.repository_token,
             )
-            self.session.update_candidate(document)
-            self.session.detach_after_delete()
-            self._refresh()
-            self.set_status(
-                "Scenario deleted; current content retained as unsaved."
-            )
-            return True
         except Exception as exc:
             return self._fail("Delete", exc)
+
+        self.session.update_candidate(document)
+        self.session.detach_after_delete()
+        self._refresh()
+        self.set_status(
+            "Scenario deleted; current content retained as unsaved."
+        )
+        return True
 
     def import_document(self):
         if not self._protect():
             return False
+
         source = self.view.import_path()
         if not source:
             return False
+
         try:
             result = self.repository.import_scenario(
                 source,
                 now=self._timestamp(),
             )
-            self.session = ScenarioSession(result.document)
-            self.session.accept_saved(
-                result.document,
-                result.conflict_token,
-                source=ScenarioSource.IMPORTED,
-            )
-            self._apply(result.document, True)
-            self._refresh()
-            return True
         except Exception as exc:
             return self._fail("Import", exc)
+
+        self.session = ScenarioSession(result.document)
+        self.session.accept_saved(
+            result.document,
+            result.conflict_token,
+            source=ScenarioSource.IMPORTED,
+        )
+        self._apply(result.document, True)
+        self._refresh()
+        return True
 
     def export(self):
         document = self._candidate("Export")
         if document is None:
             return False
+
         destination = self.view.export_path(
             f"{document.name}.json"
         )
         if not destination:
             return False
+
         path = Path(destination)
         overwrite = (
             path.exists()
@@ -315,19 +339,21 @@ class ScenarioController:
         )
         if path.exists() and not overwrite:
             return False
+
         try:
             export_scenario_document(
                 document,
                 path,
                 overwrite=overwrite,
             )
-            self.set_status(
-                "Scenario exported without changing save state."
-            )
-            self._refresh()
-            return True
         except Exception as exc:
             return self._fail("Export", exc)
+
+        self.set_status(
+            "Scenario exported without changing save state."
+        )
+        self._refresh()
+        return True
 
     def can_close(self):
         return self._protect()
@@ -335,10 +361,16 @@ class ScenarioController:
     def on_user_edit(self):
         if self._applying or not self.session:
             return
+
+        self.session.mark_ui_edited()
         try:
-            self.session.update_candidate(self._build())
-        except Exception:
-            pass
+            candidate = self._build()
+        except EXPECTED_EDIT_ERRORS as exc:
+            self.session.mark_invalid_edit(exc)
+        else:
+            self.session.update_candidate(candidate)
+            self.session.reconcile_dirty_state()
+
         self._refresh()
 
     def _build(self):
@@ -348,11 +380,20 @@ class ScenarioController:
             raise ValueError(
                 "Faction, target, and level are required"
             )
+        if not self.economy_state.starting_resources_valid:
+            raise (
+                self.economy_state.starting_resources_issue
+                or ValueError("Starting resources are invalid.")
+            )
+        if self.economy_state.recruitment_issue is not None:
+            raise self.economy_state.recruitment_issue
+
         base = (
             self.session.current_document
             or self.session.active_document
         )
         name, description, notes = self.view.metadata()
+
         return replace(
             base,
             name=name,
@@ -374,10 +415,18 @@ class ScenarioController:
 
     def _candidate(self, action):
         try:
-            return self._build()
-        except Exception as exc:
+            candidate = self._build()
+        except EXPECTED_EDIT_ERRORS as exc:
+            if self.session:
+                self.session.mark_invalid_edit(exc)
+                self._refresh()
             self._fail(action, exc)
             return None
+
+        if self.session:
+            self.session.update_candidate(candidate)
+            self.session.reconcile_dirty_state()
+        return candidate
 
     def _apply(self, document, regenerate):
         self._applying = True
@@ -387,6 +436,7 @@ class ScenarioController:
             self.economy_presenter.apply_document(document)
         finally:
             self._applying = False
+
         if regenerate:
             self.planner_presenter.on_generate_plan()
             self.economy_presenter.on_generate()
@@ -406,19 +456,21 @@ class ScenarioController:
         )
 
     def _fail(self, action, exc):
-        message = (
-            f"{action} could not be completed. "
-            "Your current scenario and edits were preserved."
-        )
-        if hasattr(exc, "detail"):
-            message = (
-                f"{action} failed: {getattr(exc, 'detail')}. "
-                "Your current scenario and edits were preserved."
-            )
-        elif isinstance(exc, ScenarioConflictError):
+        detail = getattr(exc, "detail", str(exc))
+        if isinstance(exc, ScenarioConflictError):
             message = (
                 f"{action} detected a stored-scenario conflict. "
                 "Nothing was overwritten."
+            )
+        elif detail:
+            message = (
+                f"{action} failed: {detail}. "
+                "Your current scenario and edits were preserved."
+            )
+        else:
+            message = (
+                f"{action} could not be completed. "
+                "Your current scenario and edits were preserved."
             )
         self.view.show_error(message)
         return False

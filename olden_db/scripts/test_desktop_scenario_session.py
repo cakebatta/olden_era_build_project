@@ -1,22 +1,44 @@
-from datetime import datetime, timezone
-from uuid import UUID
-from olden_db.models import ResourceCost
-from olden_db.planner import GameDate
-from olden_db.scenario import PlanningScenario
-from olden_db.scenario_persistence import create_scenario_document, rename_scenario_document
+from dataclasses import replace
+
 from olden_db.desktop.scenario_session import ScenarioSession
+from scripts._scenario_test_support import make_document
+
 
 def main():
-    now=datetime(2026,1,1,tzinfo=timezone.utc)
-    doc=create_scenario_document(name="A",faction="nature",target_sid="Build_Tier_1",target_level=1,now=now,
-        scenario_id_factory=lambda:UUID("00000000-0000-0000-0000-000000000001"))
-    session=ScenarioSession(doc)
-    assert session.has_unsaved_risk and not session.dirty
-    session.update_candidate(rename_scenario_document(doc,"B"))
+    document = make_document()
+    session = ScenarioSession(document)
+    assert session.has_unsaved_risk
+    assert not session.dirty
+
+    session.accept_saved(document, "opaque")
+    assert not session.has_unsaved_risk
+    assert session.display_name == "Managed Scenario"
+
+    session.mark_ui_edited()
+    session.mark_invalid_edit(ValueError("name cannot be blank"))
+    assert session.invalid
+    assert session.has_unsaved_risk
+    assert session.display_name == "Managed Scenario *"
+    assert session.last_valid_candidate == document
+
+    changed = replace(document, name="Changed")
+    session.update_candidate(changed)
+    session.reconcile_dirty_state()
     assert session.dirty
-    session.accept_saved(session.current_document,"opaque-token")
-    assert not session.dirty and session.repository_membership and session.repository_token=="opaque-token"
+    assert session.display_name == "Changed *"
+
+    session.update_candidate(document)
+    session.reconcile_dirty_state()
+    assert not session.dirty
+    assert not session.has_unsaved_risk
+    assert session.display_name == "Managed Scenario"
+
     session.detach_after_delete()
-    assert session.has_unsaved_risk and not session.repository_membership and session.repository_token is None
-    print("Desktop scenario-session validation completed successfully.")
-if __name__=="__main__":main()
+    assert session.has_unsaved_risk
+    assert session.display_name.endswith(" *")
+
+    print("Desktop scenario-session behavioral validation completed successfully.")
+
+
+if __name__ == "__main__":
+    main()

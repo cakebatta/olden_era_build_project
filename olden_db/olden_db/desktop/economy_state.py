@@ -37,7 +37,9 @@ class RecruitmentSelection:
 class EconomyTimelineState:
     starting_resources: ResourceCost = field(default_factory=ResourceCost)
     starting_resources_valid: bool = True
+    starting_resources_issue: ValueError | None = None
     recruitment_selections: tuple[RecruitmentSelection, ...] = ()
+    recruitment_issue: ValueError | None = None
     current_ledger: ResourceLedger | None = None
     control_ledger: ResourceLedger | None = None
 
@@ -52,11 +54,20 @@ class EconomyTimelineState:
     def replace_starting_resources(self, resources: ResourceCost) -> None:
         self.starting_resources = resources
         self.starting_resources_valid = True
+        self.starting_resources_issue = None
         self.current_ledger = None
 
-    def invalidate_starting_resources(self) -> None:
+    def invalidate_starting_resources(self, message: str = "Starting resources are invalid.") -> None:
         self.starting_resources_valid = False
+        self.starting_resources_issue = ValueError(message)
         self.current_ledger = None
+
+    def mark_recruitment_invalid(self, message: str) -> None:
+        self.recruitment_issue = ValueError(message)
+        self.current_ledger = None
+
+    def clear_recruitment_issue(self) -> None:
+        self.recruitment_issue = None
 
     def replace_recruitment_selection(
         self,
@@ -68,12 +79,18 @@ class EconomyTimelineState:
             if (item.date, item.dwelling)
             != (selection.date, selection.dwelling)
         )
-        updated = retained if selection.total_quantity == 0 else retained + (selection,)
+        updated = (
+            retained
+            if selection.total_quantity == 0
+            else retained + (selection,)
+        )
         self.recruitment_selections = tuple(sorted(updated))
+        self.recruitment_issue = None
         self.current_ledger = None
 
     def clear_recruitment(self) -> None:
         self.recruitment_selections = ()
+        self.recruitment_issue = None
         self.current_ledger = None
         self.control_ledger = None
 
