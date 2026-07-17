@@ -2,38 +2,26 @@
 
 ## Completed
 
-- Project structure
-- Data models
-- Building parser
-- Unit parser
-- Dependency graph
-- Planner
-- Localization
-- Database integration
-- Centralized paths
-- Test suite for each module
+- Project structure and canonical data models
+- Building and unit parsers
+- Dependency graph and deterministic planner
+- Localization and database integration
 - Query Layer
-- Desktop planning workflows
-- Recruitment and resource-ledger foundations
-- Town-income data integration
-- Scenario persistence product and architecture specification (DE-005)
+- Responsive desktop planning, comparison, and economy workspaces
+- Recruitment, town-income, and ResourceLedger integration
+- Scenario persistence product specification and certified implementation
+- Desktop scenario manager (UI-012)
 
-## Current Milestone
+## Current milestone
 
-Sprint 11 — Scenario Management.
-
-The canonical persistence design is defined in:
-
-- `docs/product/scenario_management.md`
-- `docs/scenario_persistence_architecture.md`
-
-The next implementation milestone may build scenario serialization and repository behavior without inventing additional product rules.
+Sprint 11 — Scenario Management is implemented through the persistent desktop scenario
+library and complete Version 1 lifecycle.
 
 ## Planned
 
-1. Scenario persistence implementation
-2. Desktop scenario-management workflow
-3. Persistence QA and compatibility validation
-4. Packaging and release
+1. ENG-001 — Persistence Test Hardening
+2. Packaging and release preparation
+3. Additional deterministic analysis workflows
 
-Future enhancements may include richer analysis but will avoid stochastic map modelling.
+Future enhancements will preserve persistence, Query Layer, parser, planner, and desktop
+ownership boundaries and will avoid stochastic map modelling.
