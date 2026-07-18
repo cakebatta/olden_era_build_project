@@ -9,13 +9,35 @@ from .graph import (
     is_valid_topological_order,
 )
 from .models import BuildingKey, FactionCity, ResourceCost
+from .planner_diagnostics import (
+    PlannerDiagnostic,
+    PlannerDiagnosticCategory,
+)
 
 
 class PlannerError(ValueError):
     """Base exception for build-planning errors."""
 
 
-class InvalidBuildOrderError(PlannerError):
+class PlanningFailure(PlannerError):
+    """Authoritative planning failure carrying canonical structured diagnostics."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        diagnostics: tuple[PlannerDiagnostic, ...],
+    ) -> None:
+        super().__init__(message)
+        normalized = tuple(diagnostics)
+        if not normalized:
+            raise ValueError("planning failures require at least one diagnostic")
+        if any(not isinstance(item, PlannerDiagnostic) for item in normalized):
+            raise TypeError("diagnostics must contain PlannerDiagnostic values")
+        self.diagnostics = normalized
+
+
+class InvalidBuildOrderError(PlanningFailure):
     """Raised when a supplied build order violates the dependency graph."""
 
 
@@ -114,33 +136,88 @@ class BuildPlan:
         return tuple(step.building for step in self.steps)
 
 
-def plan_build_order(
+@dataclass(frozen=True, slots=True)
+class PlannerResult:
+    """Successful planner result with canonical structured diagnostics."""
+
+    plan: BuildPlan
+    diagnostics: tuple[PlannerDiagnostic, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.plan, BuildPlan):
+            raise TypeError("plan must be a BuildPlan")
+        normalized = tuple(self.diagnostics)
+        if any(not isinstance(item, PlannerDiagnostic) for item in normalized):
+            raise TypeError("diagnostics must contain PlannerDiagnostic values")
+        object.__setattr__(self, "diagnostics", normalized)
+
+
+def _diagnostic(
+    diagnostic_code: str,
+    category: PlannerDiagnosticCategory,
+    explanation: str,
+    *,
+    affected_entities: tuple[BuildingKey, ...] = (),
+    metadata: tuple[tuple[str, str], ...] = (),
+) -> PlannerDiagnostic:
+    return PlannerDiagnostic(
+        diagnostic_code=diagnostic_code,
+        category=category,
+        canonical_explanation=explanation,
+        affected_entities=affected_entities,
+        metadata=metadata,
+    )
+
+
+def plan_build_order_result(
     city: FactionCity,
     graph: DependencyGraph,
     order: Iterable[BuildingKey],
     *,
     order_number: int = 1,
     starting_date: GameDate = GameDate(1, 1, 1),
-) -> BuildPlan:
+) -> PlannerResult:
     """
-    Convert one legal topological order into a dated, costed build plan.
+    Convert one legal topological order into a dated, costed planner result.
 
-    Assumptions:
-    - one building action per day;
-    - resources are immediately available;
-    - starting buildings require neither an action nor resource cost.
+    Failures retain the existing exception-based behavioral contract and carry
+    canonical structured diagnostics.
     """
     normalized_order = tuple(order)
 
     if city.faction != graph.faction:
-        raise PlannerError(
+        explanation = (
             f"City faction {city.faction!r} does not match graph faction "
             f"{graph.faction!r}"
         )
+        raise PlanningFailure(
+            explanation,
+            diagnostics=(
+                _diagnostic(
+                    "PLANNER_FACTION_MISMATCH",
+                    PlannerDiagnosticCategory.INVALID_REQUEST,
+                    explanation,
+                    metadata=(
+                        ("city_faction", city.faction),
+                        ("graph_faction", graph.faction),
+                    ),
+                ),
+            ),
+        )
 
     if not is_valid_topological_order(graph, normalized_order):
+        explanation = f"Order is not valid for target {graph.target}"
         raise InvalidBuildOrderError(
-            f"Order is not valid for target {graph.target}"
+            explanation,
+            diagnostics=(
+                _diagnostic(
+                    "PLANNER_INVALID_BUILD_ORDER",
+                    PlannerDiagnosticCategory.INVALID_BUILD_ORDER,
+                    explanation,
+                    affected_entities=(graph.target, *normalized_order),
+                    metadata=(("target", str(graph.target)),),
+                ),
+            ),
         )
 
     cumulative = ResourceCost()
@@ -150,8 +227,18 @@ def plan_build_order(
         try:
             building = city.buildings[key]
         except KeyError as exc:
-            raise PlannerError(
-                f"Graph node {key} is absent from the city"
+            explanation = f"Graph node {key} is absent from the city"
+            raise PlanningFailure(
+                explanation,
+                diagnostics=(
+                    _diagnostic(
+                        "PLANNER_GRAPH_NODE_MISSING_FROM_CITY",
+                        PlannerDiagnosticCategory.DATA_INTEGRITY,
+                        explanation,
+                        affected_entities=(key,),
+                        metadata=(("graph_target", str(graph.target)),),
+                    ),
+                ),
             ) from exc
 
         cumulative = cumulative + building.cost
@@ -165,14 +252,38 @@ def plan_build_order(
             )
         )
 
-    return BuildPlan(
-        faction=city.faction,
-        target=graph.target,
-        order_number=order_number,
-        steps=tuple(steps),
-        total_cost=cumulative,
-        starting_date=starting_date,
+    return PlannerResult(
+        plan=BuildPlan(
+            faction=city.faction,
+            target=graph.target,
+            order_number=order_number,
+            steps=tuple(steps),
+            total_cost=cumulative,
+            starting_date=starting_date,
+        )
     )
+
+
+def plan_build_order(
+    city: FactionCity,
+    graph: DependencyGraph,
+    order: Iterable[BuildingKey],
+    *,
+    order_number: int = 1,
+    starting_date: GameDate = GameDate(1, 1, 1),
+) -> BuildPlan:
+    """
+    Compatibility interface returning the historical BuildPlan value.
+
+    New callers that need success diagnostics should use plan_build_order_result.
+    """
+    return plan_build_order_result(
+        city,
+        graph,
+        order,
+        order_number=order_number,
+        starting_date=starting_date,
+    ).plan
 
 
 def plan_all_orders(
@@ -205,25 +316,71 @@ def validate_plan_set(plans: Iterable[BuildPlan]) -> None:
     """
     normalized = tuple(plans)
     if not normalized:
-        raise PlannerError("plan set cannot be empty")
+        explanation = "plan set cannot be empty"
+        raise PlanningFailure(
+            explanation,
+            diagnostics=(
+                _diagnostic(
+                    "PLANNER_EMPTY_PLAN_SET",
+                    PlannerDiagnosticCategory.CONSISTENCY,
+                    explanation,
+                ),
+            ),
+        )
 
     first = normalized[0]
     seen_orders: set[tuple[BuildingKey, ...]] = set()
 
     for plan in normalized:
-        if plan.faction != first.faction:
-            raise PlannerError("plan set contains multiple factions")
-        if plan.target != first.target:
-            raise PlannerError("plan set contains multiple targets")
-        if plan.starting_date != first.starting_date:
-            raise PlannerError("plan set contains multiple starting dates")
-        if plan.build_actions != first.build_actions:
-            raise PlannerError("plan set has inconsistent action counts")
-        if plan.total_cost != first.total_cost:
-            raise PlannerError("plan set has inconsistent total costs")
-        if plan.completion_date != first.completion_date:
-            raise PlannerError("plan set has inconsistent completion dates")
-        if plan.order in seen_orders:
-            raise PlannerError("plan set contains duplicate build orders")
+        checks = (
+            (
+                plan.faction != first.faction,
+                "PLANNER_PLAN_SET_MULTIPLE_FACTIONS",
+                "plan set contains multiple factions",
+            ),
+            (
+                plan.target != first.target,
+                "PLANNER_PLAN_SET_MULTIPLE_TARGETS",
+                "plan set contains multiple targets",
+            ),
+            (
+                plan.starting_date != first.starting_date,
+                "PLANNER_PLAN_SET_MULTIPLE_STARTING_DATES",
+                "plan set contains multiple starting dates",
+            ),
+            (
+                plan.build_actions != first.build_actions,
+                "PLANNER_PLAN_SET_INCONSISTENT_ACTION_COUNTS",
+                "plan set has inconsistent action counts",
+            ),
+            (
+                plan.total_cost != first.total_cost,
+                "PLANNER_PLAN_SET_INCONSISTENT_TOTAL_COSTS",
+                "plan set has inconsistent total costs",
+            ),
+            (
+                plan.completion_date != first.completion_date,
+                "PLANNER_PLAN_SET_INCONSISTENT_COMPLETION_DATES",
+                "plan set has inconsistent completion dates",
+            ),
+            (
+                plan.order in seen_orders,
+                "PLANNER_PLAN_SET_DUPLICATE_ORDER",
+                "plan set contains duplicate build orders",
+            ),
+        )
+        for failed, code, explanation in checks:
+            if failed:
+                raise PlanningFailure(
+                    explanation,
+                    diagnostics=(
+                        _diagnostic(
+                            code,
+                            PlannerDiagnosticCategory.CONSISTENCY,
+                            explanation,
+                            affected_entities=(plan.target,),
+                        ),
+                    ),
+                )
 
         seen_orders.add(plan.order)

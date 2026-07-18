@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Protocol
 
 from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
-from olden_db.planner import BuildPlan
+from olden_db.planner import BuildPlan, PlanningFailure
 from olden_db.query import PlanningQueryService, QueryError
 from olden_db.scenario import (
     DuplicateStartingBuildingOverrideError,
@@ -16,6 +16,10 @@ from olden_db.scenario import (
 )
 
 from ..formatting import format_faction_status
+from ..planner_diagnostics import (
+    PlannerDiagnosticPresentation,
+    adapt_planner_diagnostics,
+)
 from ..state import PlannerState
 
 SCENARIO_ERRORS = (
@@ -52,6 +56,10 @@ class PlannerViewContract(Protocol):
         cumulative_cost: ResourceCost,
     ) -> None: ...
     def show_error(self, message: str) -> None: ...
+    def set_constraint_diagnostics(
+        self,
+        diagnostics: tuple[PlannerDiagnosticPresentation, ...],
+    ) -> None: ...
 
 
 class PlannerPresenter:
@@ -246,7 +254,7 @@ class PlannerPresenter:
                 level,
                 scenario=scenario,
             )
-        except (QueryError, *SCENARIO_ERRORS) as exc:
+        except (QueryError, PlanningFailure, *SCENARIO_ERRORS) as exc:
             self._show_error(exc)
             return
 
@@ -284,4 +292,11 @@ class PlannerPresenter:
         self._state.clear_results()
         message = f"Request could not be completed: {exc}"
         self._view.show_error(message)
+
+        diagnostics = getattr(exc, "diagnostics", ())
+        if diagnostics:
+            self._view.set_constraint_diagnostics(
+                adapt_planner_diagnostics(tuple(diagnostics))
+            )
+
         self._set_status(message)
