@@ -8,7 +8,13 @@ from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .income_timeline import calculate_income_timeline
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
-from .planner import BuildPlan, GameDate, plan_build_order
+from .planner import (
+    BuildPlan,
+    GameDate,
+    PlannerResult,
+    plan_build_order,
+    plan_build_order_result,
+)
 from .recruitment_stock import calculate_recruitment_stock
 from .resource_ledger import (
     RecruitmentAction,
@@ -127,6 +133,25 @@ class PlanningQueryService:
         city, graph = self._build_graph(faction, sid, level, scenario=scenario)
         order = next(iter_topological_orders(graph))
         return plan_build_order(city, graph, order, starting_date=starting_date)
+
+    def generate_planner_result(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+        *,
+        starting_date: GameDate = GameDate(1, 1, 1),
+        scenario: PlanningScenario | None = None,
+    ) -> PlannerResult:
+        """Return the canonical planner result without presentation translation."""
+        city, graph = self._build_graph(faction, sid, level, scenario=scenario)
+        order = next(iter_topological_orders(graph))
+        return plan_build_order_result(
+            city,
+            graph,
+            order,
+            starting_date=starting_date,
+        )
 
     def get_cumulative_cost(
         self,

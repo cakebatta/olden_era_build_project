@@ -10,7 +10,7 @@ from olden_db.planner_diagnostics import (
 
 
 class DiagnosticSeverity(str, Enum):
-    """Desktop-only visual severity for the constraint inspector."""
+    """Desktop-only visual severity for the diagnostic inspector."""
 
     ERROR = "Error"
     WARNING = "Warning"

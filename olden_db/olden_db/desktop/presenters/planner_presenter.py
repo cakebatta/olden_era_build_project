@@ -56,7 +56,7 @@ class PlannerViewContract(Protocol):
         cumulative_cost: ResourceCost,
     ) -> None: ...
     def show_error(self, message: str) -> None: ...
-    def set_constraint_diagnostics(
+    def set_diagnostics(
         self,
         diagnostics: tuple[PlannerDiagnosticPresentation, ...],
     ) -> None: ...
@@ -236,18 +236,14 @@ class PlannerPresenter:
                 level,
                 scenario=scenario,
             )
-            plan = self._service.generate_build_plan(
+            planner_result = self._service.generate_planner_result(
                 faction,
                 sid,
                 level,
                 scenario=scenario,
             )
-            cost = self._service.get_cumulative_cost(
-                faction,
-                sid,
-                level,
-                scenario=scenario,
-            )
+            plan = planner_result.plan
+            cost = plan.total_cost
             orders = self._service.enumerate_build_orders(
                 faction,
                 sid,
@@ -268,6 +264,9 @@ class PlannerPresenter:
         self._view.show_target(building)
         self._view.show_prerequisites(statuses)
         self._view.show_plan(plan, cost)
+        self._view.set_diagnostics(
+            adapt_planner_diagnostics(planner_result.diagnostics)
+        )
 
     def _load_candidates(self, faction, sids):
         return tuple(
@@ -295,7 +294,7 @@ class PlannerPresenter:
 
         diagnostics = getattr(exc, "diagnostics", ())
         if diagnostics:
-            self._view.set_constraint_diagnostics(
+            self._view.set_diagnostics(
                 adapt_planner_diagnostics(tuple(diagnostics))
             )
 

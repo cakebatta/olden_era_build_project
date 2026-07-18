@@ -41,8 +41,8 @@ class PlannerView(ttk.Frame):
         self._level_var = tk.StringVar()
         self._mode_var = tk.StringVar(value=format_planning_mode(0))
         self._scenario_vars: dict[BuildingKey, tk.BooleanVar] = {}
-        self._constraint_inspector_expanded = False
-        self._constraint_diagnostics: tuple[
+        self._diagnostic_inspector_expanded = False
+        self._diagnostics: tuple[
             PlannerDiagnosticPresentation, ...
         ] = ()
 
@@ -145,61 +145,64 @@ class PlannerView(ttk.Frame):
             "section", font=("TkDefaultFont", 11, "bold"), spacing1=12, spacing3=6
         )
 
-        self._constraint_header = ttk.Button(
+        self._diagnostic_header = ttk.Button(
             self,
-            text="▶ Constraint Inspector",
-            command=self._toggle_constraint_inspector,
+            text="▶ Diagnostic Inspector",
+            command=self._toggle_diagnostic_inspector,
         )
-        self._constraint_header.grid(
+        self._diagnostic_header.grid(
             row=4,
             column=0,
             sticky="ew",
             pady=(10, 0),
         )
 
-        self._constraint_panel = ttk.LabelFrame(
+        self._diagnostic_panel = ttk.LabelFrame(
             self,
-            text="Planner-provided diagnostics",
+            text="Planner diagnostics",
             padding=8,
         )
-        self._constraint_panel.columnconfigure(0, weight=1)
-        self._constraint_panel.rowconfigure(0, weight=1)
+        self._diagnostic_panel.columnconfigure(0, weight=1)
+        self._diagnostic_panel.rowconfigure(0, weight=1)
 
-        self._constraint_canvas = tk.Canvas(
-            self._constraint_panel,
+        self._diagnostic_canvas = tk.Canvas(
+            self._diagnostic_panel,
             height=150,
-            highlightthickness=0,
+            takefocus=True,
+            highlightthickness=2,
+            highlightcolor="SystemHighlight",
+            highlightbackground="SystemButtonFace",
         )
-        self._constraint_scrollbar = ttk.Scrollbar(
-            self._constraint_panel,
+        self._diagnostic_scrollbar = ttk.Scrollbar(
+            self._diagnostic_panel,
             orient="vertical",
-            command=self._constraint_canvas.yview,
+            command=self._diagnostic_canvas.yview,
         )
-        self._constraint_canvas.configure(
-            yscrollcommand=self._constraint_scrollbar.set
+        self._diagnostic_canvas.configure(
+            yscrollcommand=self._diagnostic_scrollbar.set
         )
-        self._constraint_canvas.grid(row=0, column=0, sticky="nsew")
-        self._constraint_scrollbar.grid(row=0, column=1, sticky="ns")
-        self._constraint_content = ttk.Frame(self._constraint_canvas)
-        self._constraint_window = self._constraint_canvas.create_window(
+        self._diagnostic_canvas.grid(row=0, column=0, sticky="nsew")
+        self._diagnostic_scrollbar.grid(row=0, column=1, sticky="ns")
+        self._diagnostic_content = ttk.Frame(self._diagnostic_canvas)
+        self._diagnostic_window = self._diagnostic_canvas.create_window(
             (0, 0),
-            window=self._constraint_content,
+            window=self._diagnostic_content,
             anchor="nw",
         )
-        self._constraint_content.bind(
+        self._diagnostic_content.bind(
             "<Configure>",
-            lambda _event: self._constraint_canvas.configure(
-                scrollregion=self._constraint_canvas.bbox("all")
+            lambda _event: self._diagnostic_canvas.configure(
+                scrollregion=self._diagnostic_canvas.bbox("all")
             ),
         )
-        self._constraint_canvas.bind(
+        self._diagnostic_canvas.bind(
             "<Configure>",
-            lambda event: self._constraint_canvas.itemconfigure(
-                self._constraint_window,
+            lambda event: self._diagnostic_canvas.itemconfigure(
+                self._diagnostic_window,
                 width=event.width,
             ),
         )
-        self.set_constraint_diagnostics(())
+        self.set_diagnostics(())
         self._show_instruction()
 
     def set_event_handlers(
@@ -279,11 +282,11 @@ class PlannerView(ttk.Frame):
         self._mode_var.set(format_planning_mode(override_count))
 
     def clear_results(self) -> None:
-        self.set_constraint_diagnostics(())
+        self.set_diagnostics(())
         self._show_instruction()
 
     def show_target(self, building: BuildingLevel) -> None:
-        self.set_constraint_diagnostics(())
+        self.set_diagnostics(())
         self._replace_results()
         self._append_section("Target", format_target(building))
 
@@ -296,7 +299,7 @@ class PlannerView(ttk.Frame):
         self._results_text.see("1.0")
 
     def show_error(self, message: str) -> None:
-        self.set_constraint_diagnostics((
+        self.set_diagnostics((
             PlannerDiagnosticPresentation(
                 title="Planning request failed",
                 explanation=message,
@@ -306,27 +309,44 @@ class PlannerView(ttk.Frame):
         self._replace_results()
         self._append_section("Unable to Generate Plan", message)
 
-    def set_constraint_diagnostics(
+    def set_diagnostics(
         self,
         diagnostics: tuple[PlannerDiagnosticPresentation, ...],
     ) -> None:
-        self._constraint_diagnostics = tuple(diagnostics)
-        for widget in self._constraint_content.winfo_children():
+        self._diagnostics = tuple(diagnostics)
+        for widget in self._diagnostic_content.winfo_children():
             widget.destroy()
+        self._diagnostic_items.clear()
 
-        if not self._constraint_diagnostics:
+        if not self._diagnostics:
             ttk.Label(
-                self._constraint_content,
-                text="No planner constraints to display.",
+                self._diagnostic_content,
+                text="No diagnostics.",
                 justify="left",
             ).grid(row=0, column=0, sticky="w", padx=4, pady=4)
             return
 
-        self._constraint_content.columnconfigure(0, weight=1)
-        for row, diagnostic in enumerate(self._constraint_diagnostics):
-            item = ttk.Frame(self._constraint_content, padding=(4, 6))
+        self._diagnostic_content.columnconfigure(0, weight=1)
+        for row, diagnostic in enumerate(self._diagnostics):
+            item = tk.Frame(
+                self._diagnostic_content,
+                padx=6,
+                pady=6,
+                takefocus=True,
+                highlightthickness=2,
+                highlightcolor="SystemHighlight",
+                highlightbackground="SystemButtonFace",
+            )
             item.grid(row=row, column=0, sticky="ew")
             item.columnconfigure(0, weight=1)
+            item.bind("<Up>", self._focus_previous_diagnostic)
+            item.bind("<Down>", self._focus_next_diagnostic)
+            item.bind("<Home>", self._focus_first_diagnostic)
+            item.bind("<End>", self._focus_last_diagnostic)
+            item.bind("<MouseWheel>", self._scroll_diagnostics)
+            item.bind("<Button-4>", self._scroll_diagnostics)
+            item.bind("<Button-5>", self._scroll_diagnostics)
+            self._diagnostic_items.append(item)
             marker = _DIAGNOSTIC_MARKERS[diagnostic.severity]
             ttk.Label(
                 item,
@@ -341,28 +361,79 @@ class PlannerView(ttk.Frame):
                 wraplength=720,
             ).grid(row=1, column=0, sticky="ew", pady=(3, 0))
 
-    def set_constraint_inspector_expanded(self, expanded: bool) -> None:
-        self._constraint_inspector_expanded = bool(expanded)
-        if self._constraint_inspector_expanded:
-            self._constraint_header.configure(text="▼ Constraint Inspector")
-            self._constraint_panel.grid(
+    def set_diagnostic_inspector_expanded(self, expanded: bool) -> None:
+        self._diagnostic_inspector_expanded = bool(expanded)
+        if self._diagnostic_inspector_expanded:
+            self._diagnostic_header.configure(text="▼ Diagnostic Inspector")
+            self._diagnostic_panel.grid(
                 row=5,
                 column=0,
                 sticky="nsew",
                 pady=(4, 0),
             )
         else:
-            self._constraint_header.configure(text="▶ Constraint Inspector")
-            self._constraint_panel.grid_remove()
+            self._diagnostic_header.configure(text="▶ Diagnostic Inspector")
+            self._diagnostic_panel.grid_remove()
 
     @property
-    def constraint_inspector_expanded(self) -> bool:
-        return self._constraint_inspector_expanded
+    def diagnostic_inspector_expanded(self) -> bool:
+        return self._diagnostic_inspector_expanded
 
-    def _toggle_constraint_inspector(self) -> None:
-        self.set_constraint_inspector_expanded(
-            not self._constraint_inspector_expanded
+    def _toggle_diagnostic_inspector(self) -> None:
+        self.set_diagnostic_inspector_expanded(
+            not self._diagnostic_inspector_expanded
         )
+
+    def _focused_diagnostic_index(self) -> int:
+        focused = self.focus_get()
+        try:
+            return self._diagnostic_items.index(focused)
+        except ValueError:
+            return -1
+
+    def _focus_diagnostic(self, index: int) -> str:
+        if not self._diagnostic_items:
+            self._diagnostic_canvas.focus_set()
+            return "break"
+        index = max(0, min(index, len(self._diagnostic_items) - 1))
+        item = self._diagnostic_items[index]
+        item.focus_set()
+        self.update_idletasks()
+        content_height = max(1, self._diagnostic_content.winfo_reqheight())
+        viewport_height = max(1, self._diagnostic_canvas.winfo_height())
+        item_top = item.winfo_y()
+        item_bottom = item_top + item.winfo_height()
+        visible_top = self._diagnostic_canvas.canvasy(0)
+        visible_bottom = visible_top + viewport_height
+        if item_top < visible_top:
+            self._diagnostic_canvas.yview_moveto(item_top / content_height)
+        elif item_bottom > visible_bottom:
+            target = max(0, item_bottom - viewport_height)
+            self._diagnostic_canvas.yview_moveto(target / content_height)
+        return "break"
+
+    def _focus_previous_diagnostic(self, _event: tk.Event[tk.Misc]) -> str:
+        return self._focus_diagnostic(self._focused_diagnostic_index() - 1)
+
+    def _focus_next_diagnostic(self, _event: tk.Event[tk.Misc]) -> str:
+        return self._focus_diagnostic(self._focused_diagnostic_index() + 1)
+
+    def _focus_first_diagnostic(self, _event: tk.Event[tk.Misc]) -> str:
+        return self._focus_diagnostic(0)
+
+    def _focus_last_diagnostic(self, _event: tk.Event[tk.Misc]) -> str:
+        return self._focus_diagnostic(len(self._diagnostic_items) - 1)
+
+    def _scroll_diagnostics(self, event: tk.Event[tk.Misc]) -> str:
+        if getattr(event, "num", None) == 4:
+            units = -1
+        elif getattr(event, "num", None) == 5:
+            units = 1
+        else:
+            delta = getattr(event, "delta", 0)
+            units = -1 if delta > 0 else 1
+        self._diagnostic_canvas.yview_scroll(units, "units")
+        return "break"
 
     def _clear_scenario_content(self) -> None:
         for widget in self._scenario_content.winfo_children():
