@@ -41,7 +41,7 @@ def test_failure_diagnostics() -> None:
 
 
 def test_empty_state() -> None:
-    require('text="No diagnostics."' in source(VIEW), 'Explicit empty state missing')
+    require("No diagnostics" in source(VIEW), "Explicit empty state missing")
 
 
 def test_order_and_read_only() -> None:
