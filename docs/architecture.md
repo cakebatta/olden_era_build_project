@@ -14,6 +14,7 @@ The application models:
 - hypothetical starting scenarios;
 - diagnostics and planning failures;
 - interactive planning workspaces;
+- side-by-side scenario comparison workspaces;
 - localized display names.
 
 It intentionally does not treat random map income or other stochastic map events as canonical planning inputs.
@@ -57,25 +58,21 @@ The desktop application is a client of the Query Layer.
 
 It must not invoke parser, database, graph, path, localization, or planner-algorithm internals directly.
 
-The interactive product uses an application-scoped Planning Workspace:
+The interactive product uses application-scoped Planning Workspaces. ARCH-019 defines one workspace lifecycle; ARCH-020 composes independent workspaces in a Scenario Comparison Collection:
 
 ```text
-Planning Workspace
-    ↓
-Planning Execution Coordinator
-    ↓
-Planning Query Service
-    ↓
-PlannerResult or documented failure
-    ↓
-Presenter
-    ↓
-View
+Scenario Comparison Collection
+    ├── Planning Workspace A ──┐
+    ├── Planning Workspace B ──┼── shared Planning Query Service
+    └── Planning Workspace N ──┘              ↓
+                                      shared planner
 ```
 
-The workspace owns semantic planning selection, result lifecycle, and revision tracking. It does not own planner algorithms or widget state.
+Each workspace owns its semantic planning selection, result lifecycle, and revision tracking. The collection owns workspace identity, membership, ordering, and comparison selection. Neither layer owns planner algorithms or widget state.
 
 See `docs/planning_workspace_architecture.md`.
+
+See `docs/scenario_comparison_architecture.md`.
 
 ## Canonical Boundaries
 
@@ -91,6 +88,8 @@ The Query Layer coordinates backend capabilities and returns deterministic domai
 
 Application clients must use documented Query Layer operations. Missing capabilities require an additive Query Layer change rather than a direct import of internals.
 
+One application-scoped `PlanningQueryService` serves every active Planning Workspace. The Query Layer remains unaware of workspace identity, collection membership, display ordering, and comparison presentation.
+
 ### Scenario state
 
 `PlanningScenario` is immutable semantic input. It never mutates canonical parsed data.
@@ -101,11 +100,31 @@ The Query Layer resolves effective starting state; the planner remains scenario-
 
 The Planning Workspace is application orchestration, not a planner-domain subsystem.
 
-For the initial interactive implementation, each planning selection contains exactly one canonical target. Automatic execution and stale-result handling occur above the Query Layer.
+Each planning selection contains exactly one canonical target. Automatic execution and stale-result handling occur above the Query Layer.
+
+Every workspace owns an independent selection revision, accepted-result revision, pending state, retained-result state, and failure state.
+
+### Scenario comparison
+
+Scenario comparison composes independent Planning Workspaces.
+
+Each workspace has stable application identity, independent revisions, and an independent accepted-result lifecycle. No workspace may mutate or invalidate another workspace.
+
+Comparison consumes immutable accepted-result snapshots. It must not:
+
+- create a second planner implementation;
+- share mutable workspace lifecycle state;
+- treat retained previous results as current;
+- reproduce planner or comparison algorithms in presenters;
+- infer recommendations or rankings.
+
+The initial detailed comparison selects exactly two current-ready workspaces with explicit left and right roles.
 
 ### Presentation
 
 Presenters coordinate application state and Query Layer calls.
+
+Workspace presenters remain partitioned by workspace identity. A comparison presenter consumes immutable collection and accepted-result snapshots.
 
 Views own widgets and interaction mechanics. Formatting remains pure presentation behavior.
 
@@ -121,6 +140,9 @@ Views own widgets and interaction mechanics. Formatting remains pure presentatio
 8. Player intent is modeled semantically rather than as checkbox state.
 9. Multi-base planning is an N-base workspace, not a special two-base planner.
 10. New infrastructure is introduced only for measured or approved needs.
+11. Scenario comparison composes isolated workspaces over one authoritative planner.
+12. Workspace identity and selection revision jointly determine result ownership.
+13. Comparison operates on current accepted results rather than live controls or retained historical output.
 
 ## Primary Documentation
 
@@ -128,5 +150,6 @@ Views own widgets and interaction mechanics. Formatting remains pure presentatio
 - `docs/desktop_application_architecture.md`
 - `docs/scenario_planning_architecture.md`
 - `docs/planning_workspace_architecture.md`
+- `docs/scenario_comparison_architecture.md`
 - `docs/project_management_principles.md`
 - `docs/team_handoff_protocol.md`
