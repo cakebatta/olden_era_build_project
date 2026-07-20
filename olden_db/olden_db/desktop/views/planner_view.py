@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
-from olden_db.planner import BuildPlan
+from olden_db.planner import BuildPlan, GameDate
 from olden_db.scenario import PlanningScenario, PrerequisiteStatus
 
 from ..formatting import (
@@ -19,6 +19,7 @@ from ..planner_diagnostics import (
     DiagnosticSeverity,
     PlannerDiagnosticPresentation,
 )
+from ..workspace_presentation import PlanningWorkspacePresentation
 
 
 _DIAGNOSTIC_MARKERS = {
@@ -39,6 +40,15 @@ class PlannerView(ttk.Frame):
         self._faction_var = tk.StringVar()
         self._building_var = tk.StringVar()
         self._level_var = tk.StringVar()
+        self._start_month_var = tk.StringVar(value="1")
+        self._start_week_var = tk.StringVar(value="1")
+        self._start_day_var = tk.StringVar(value="1")
+        self._workspace_status_var = tk.StringVar(
+            value="Planning selection incomplete"
+        )
+        self._workspace_detail_var = tk.StringVar(
+            value="Choose one canonical target to plan automatically."
+        )
         self._mode_var = tk.StringVar(value=format_planning_mode(0))
         self._scenario_vars: dict[BuildingKey, tk.BooleanVar] = {}
         self._diagnostic_inspector_expanded = False
@@ -51,6 +61,9 @@ class PlannerView(ttk.Frame):
         self._on_faction_changed: Callable[[str], None] | None = None
         self._on_building_changed: Callable[[str], None] | None = None
         self._on_level_changed: Callable[[int], None] | None = None
+        self._on_starting_date_changed: (
+            Callable[[int, int, int], None] | None
+        ) = None
         self._on_generate_plan: Callable[[], None] | None = None
         self._on_starting_building_changed: Callable[[BuildingKey, bool], None] | None = None
         self._on_reset_scenario: Callable[[], None] | None = None
@@ -78,13 +91,47 @@ class PlannerView(ttk.Frame):
         self._level_selector.grid(row=2, column=1, sticky="ew", pady=5)
         self._level_selector.bind("<<ComboboxSelected>>", self._handle_level_event)
 
+        ttk.Label(target, text="Starting Date").grid(
+            row=3, column=0, sticky="w", padx=(0, 12), pady=5
+        )
+        date_controls = ttk.Frame(target)
+        date_controls.grid(row=3, column=1, sticky="w", pady=5)
+        for column, (label, variable, upper) in enumerate((
+            ("Month", self._start_month_var, 99),
+            ("Week", self._start_week_var, 4),
+            ("Day", self._start_day_var, 7),
+        )):
+            ttk.Label(date_controls, text=label).grid(
+                row=0,
+                column=column * 2,
+                padx=(0 if column == 0 else 10, 4),
+            )
+            control = ttk.Spinbox(
+                date_controls,
+                from_=1,
+                to=upper,
+                width=4,
+                textvariable=variable,
+                command=self._handle_starting_date_event,
+            )
+            control.grid(row=0, column=column * 2 + 1)
+            control.bind("<FocusOut>", self._handle_starting_date_event)
+            control.bind("<Return>", self._handle_starting_date_event)
+
+        ttk.Label(
+            target,
+            text="Plans update automatically when the semantic selection changes.",
+            justify="left",
+        ).grid(row=4, column=1, sticky="w", pady=(8, 0))
+
         self._generate_button = ttk.Button(
             target,
             text="Generate Plan",
             command=self._handle_generate_plan,
             state="disabled",
         )
-        self._generate_button.grid(row=3, column=1, sticky="e", pady=(14, 0))
+        self._generate_button.grid(row=5, column=1, sticky="e")
+        self._generate_button.grid_remove()
 
         scenario = ttk.LabelFrame(self, text="Starting Buildings", padding=10)
         scenario.grid(row=2, column=0, sticky="ew", pady=(18, 0))
@@ -129,7 +176,24 @@ class PlannerView(ttk.Frame):
         results = ttk.LabelFrame(self, text="Planning Results", padding=8)
         results.grid(row=3, column=0, sticky="nsew", pady=(18, 0))
         results.columnconfigure(0, weight=1)
-        results.rowconfigure(0, weight=1)
+        results.rowconfigure(1, weight=1)
+
+        workspace_status = ttk.Frame(results, padding=(10, 8))
+        workspace_status.grid(row=0, column=0, columnspan=2, sticky="ew")
+        workspace_status.columnconfigure(0, weight=1)
+        ttk.Label(
+            workspace_status,
+            textvariable=self._workspace_status_var,
+            font=("TkDefaultFont", 11, "bold"),
+            justify="left",
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Label(
+            workspace_status,
+            textvariable=self._workspace_detail_var,
+            justify="left",
+            wraplength=720,
+        ).grid(row=1, column=0, sticky="ew", pady=(3, 0))
+
         self._results_text = tk.Text(
             results,
             wrap="word",
@@ -141,8 +205,8 @@ class PlannerView(ttk.Frame):
         )
         results_scrollbar = ttk.Scrollbar(results, orient="vertical", command=self._results_text.yview)
         self._results_text.configure(yscrollcommand=results_scrollbar.set)
-        self._results_text.grid(row=0, column=0, sticky="nsew")
-        results_scrollbar.grid(row=0, column=1, sticky="ns")
+        self._results_text.grid(row=1, column=0, sticky="nsew")
+        results_scrollbar.grid(row=1, column=1, sticky="ns")
         self._results_text.tag_configure(
             "section", font=("TkDefaultFont", 11, "bold"), spacing1=12, spacing3=6
         )
@@ -234,6 +298,7 @@ class PlannerView(ttk.Frame):
         on_faction_changed: Callable[[str], None],
         on_building_changed: Callable[[str], None],
         on_level_changed: Callable[[int], None],
+        on_starting_date_changed: Callable[[int, int, int], None],
         on_generate_plan: Callable[[], None],
         on_starting_building_changed: Callable[[BuildingKey, bool], None],
         on_reset_scenario: Callable[[], None],
@@ -241,6 +306,7 @@ class PlannerView(ttk.Frame):
         self._on_faction_changed = on_faction_changed
         self._on_building_changed = on_building_changed
         self._on_level_changed = on_level_changed
+        self._on_starting_date_changed = on_starting_date_changed
         self._on_generate_plan = on_generate_plan
         self._on_starting_building_changed = on_starting_building_changed
         self._on_reset_scenario = on_reset_scenario
@@ -268,7 +334,22 @@ class PlannerView(ttk.Frame):
         self._level_selector.configure(values=(), state="disabled")
 
     def set_generate_enabled(self, enabled: bool) -> None:
-        self._generate_button.configure(state="normal" if enabled else "disabled")
+        self._generate_button.configure(state="disabled")
+
+    def set_starting_date(self, date: GameDate) -> None:
+        self._start_month_var.set(str(date.month))
+        self._start_week_var.set(str(date.week))
+        self._start_day_var.set(str(date.day))
+
+    def set_selection_values(
+        self,
+        faction: str,
+        sid: str,
+        level: int,
+    ) -> None:
+        self._faction_var.set(faction)
+        self._building_var.set(sid)
+        self._level_var.set(str(level))
 
     def set_starting_buildings(
         self,
@@ -331,6 +412,51 @@ class PlannerView(ttk.Frame):
         ))
         self._replace_results()
         self._append_section("Unable to Generate Plan", message)
+
+    def render_workspace(
+        self,
+        presentation: PlanningWorkspacePresentation,
+    ) -> None:
+        self._workspace_status_var.set(presentation.status_heading)
+        self._workspace_detail_var.set(presentation.status_detail)
+        self._replace_results()
+        self._append_section(
+            "Planning Selection",
+            presentation.selection_summary,
+        )
+        if presentation.failure_message is not None:
+            self._append_section(
+                "Current Request Failed",
+                presentation.failure_message,
+            )
+        if presentation.accepted_plan is not None:
+            heading = (
+                "Previous Accepted Plan"
+                if presentation.retained_previous_result
+                else "Current Accepted Plan"
+            )
+            self._append_section(
+                heading,
+                format_build_plan(presentation.accepted_plan),
+            )
+            self._append_section(
+                "Total Cost",
+                format_resource_cost(
+                    presentation.accepted_plan.total_cost
+                ),
+            )
+        elif presentation.is_pending:
+            self._append_text(
+                "Planning is in progress for the current selection."
+            )
+        elif presentation.failure_message is None:
+            self._append_text(
+                "Complete the semantic selection to begin automatic planning."
+            )
+        self.set_diagnostics(presentation.diagnostics)
+        self._results_text.see("1.0")
+        if presentation.is_pending:
+            self.update_idletasks()
 
     def set_diagnostics(
         self,
@@ -584,7 +710,9 @@ class PlannerView(ttk.Frame):
 
     def _show_instruction(self) -> None:
         self._replace_results()
-        self._append_text("Select a faction, building, and level to generate a build plan.")
+        self._append_text(
+            "Select a faction, building, and level to begin automatic planning."
+        )
 
     def _replace_results(self) -> None:
         self._results_text.configure(state="normal")
@@ -613,6 +741,21 @@ class PlannerView(ttk.Frame):
     def _handle_level_event(self, _event: tk.Event[tk.Misc]) -> None:
         if self._on_level_changed is not None:
             self._on_level_changed(int(self._level_var.get()))
+
+    def _handle_starting_date_event(
+        self,
+        _event: tk.Event[tk.Misc] | None = None,
+    ) -> str | None:
+        if self._on_starting_date_changed is None:
+            return None
+        try:
+            month = int(self._start_month_var.get())
+            week = int(self._start_week_var.get())
+            day = int(self._start_day_var.get())
+        except ValueError:
+            return "break"
+        self._on_starting_date_changed(month, week, day)
+        return "break" if _event is not None else None
 
     def _handle_generate_plan(self) -> None:
         if self._on_generate_plan is not None:

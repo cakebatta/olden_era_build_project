@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from olden_db.database import LoadedGameData, load_default_game_data
+from olden_db.planning_execution import PlanningExecutionCoordinator
+from olden_db.planning_workspace import PlanningWorkspace
 from olden_db.query import PlanningQueryService
 from olden_db.scenario_persistence import (
     LocalScenarioRepository,
@@ -67,6 +69,10 @@ class DesktopApplication:
 
         planner_state = PlannerState()
         economy_state = EconomyTimelineState()
+        self.planning_workspace = PlanningWorkspace.create()
+        self.planning_execution_coordinator = PlanningExecutionCoordinator(
+            service
+        )
 
         self.economy_presenter = ScenarioAwareEconomyPresenter(
             service,
@@ -77,6 +83,8 @@ class DesktopApplication:
         )
         self.planner_presenter = ScenarioAwarePlannerPresenter(
             service,
+            self.planning_workspace,
+            self.planning_execution_coordinator,
             planner_state,
             planner_view,
             self.set_status,

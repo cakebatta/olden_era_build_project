@@ -30,6 +30,9 @@ class PlannerState:
     def store_results(self,*,building,prerequisite_statuses,plan,cumulative_cost,build_orders):
         self.current_building=building;self.current_prerequisite_statuses=prerequisite_statuses
         self.current_plan=plan;self.current_cumulative_cost=cumulative_cost;self.current_build_orders=build_orders
+    def store_workspace_result(self, plan):
+        self.current_building=None;self.current_prerequisite_statuses=();self.current_plan=plan
+        self.current_cumulative_cost=plan.total_cost;self.current_build_orders=()
     def clear_results(self):
         self.current_building=None;self.current_prerequisite_statuses=();self.current_plan=None
         self.current_cumulative_cost=None;self.current_build_orders=()

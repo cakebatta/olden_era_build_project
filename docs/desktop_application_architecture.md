@@ -124,6 +124,22 @@ Use plain Python presenter classes. Do not introduce MVVM frameworks or global e
 
 Owns pure presentation formatting for stable public domain contracts, including resource costs, game dates, building identities, plan steps, diagnostics, and workspace statuses.
 
+## Sprint 13 Desktop Integration
+
+The desktop composition root constructs exactly one `PlanningWorkspace` and one
+`PlanningExecutionCoordinator` for the application session. The planner
+presenter receives both dependencies and never constructs replacements.
+
+Discrete semantic changes to faction, canonical target, starting date, or
+`PlanningScenario` replace the immutable `PlanningSelection`. Complete
+selections execute immediately and synchronously through the coordinator.
+Compound scenario restoration is applied as one semantic replacement and
+therefore executes once.
+
+The desktop renders immutable workspace snapshots as incomplete, pending,
+ready, failed, or retained-previous-result presentation. A retained result is
+never labeled current. The legacy Generate control is hidden and disabled.
+
 ## Planning Workspace Ownership
 
 ```text

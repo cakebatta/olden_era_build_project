@@ -15,9 +15,7 @@ class ScenarioAwarePlannerPresenter(PlannerPresenter):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self._on_persisted_change = (
-            on_persisted_change or (lambda: None)
-        )
+        self._on_persisted_change = on_persisted_change or (lambda: None)
 
     def set_persisted_change_handler(self, handler):
         self._on_persisted_change = handler
@@ -32,22 +30,12 @@ class ScenarioAwarePlannerPresenter(PlannerPresenter):
         return self._service.list_building_levels(faction, sid)
 
     def apply_document(self, document):
-        self.on_faction_changed(document.faction)
-        self.on_building_changed(document.target.sid)
-        self.on_level_changed(document.target.level)
-        self._state.starting_date = document.starting_date
-        self._state.replace_scenario(document.planning_scenario)
-        self._view.set_starting_buildings(
-            self._state.scenario_candidates,
-            document.planning_scenario,
-        )
-        self._view.set_planning_mode(
-            self._state.override_count
-        )
-        self._view._faction_var.set(document.faction)
-        self._view._building_var.set(document.target.sid)
-        self._view._level_var.set(
-            str(document.target.level)
+        self.apply_semantic_selection(
+            faction=document.faction,
+            sid=document.target.sid,
+            level=document.target.level,
+            starting_date=document.starting_date,
+            scenario=document.planning_scenario,
         )
 
     def on_faction_changed(self, faction):
@@ -62,73 +50,17 @@ class ScenarioAwarePlannerPresenter(PlannerPresenter):
         super().on_level_changed(level)
         self._on_persisted_change()
 
-    def on_starting_building_changed(
-        self,
-        key,
-        available,
-    ):
-        super().on_starting_building_changed(
-            key,
-            available,
-        )
+    def on_starting_date_changed(self, month, week, day):
+        super().on_starting_date_changed(month, week, day)
+        self._on_persisted_change()
+
+    def on_starting_building_changed(self, key, available):
+        super().on_starting_building_changed(key, available)
         self._on_persisted_change()
 
     def on_reset_scenario(self):
         super().on_reset_scenario()
         self._on_persisted_change()
-
-    def on_generate_plan(self):
-        if not self._state.has_complete_target:
-            return
-
-        faction = self._state.selected_faction
-        sid = self._state.selected_building_sid
-        level = self._state.selected_level
-        self._clear_generated_results()
-        scenario = self._state.active_scenario
-
-        try:
-            building = self._service.get_building(
-                faction,
-                sid,
-                level,
-            )
-            statuses = (
-                self._service.get_prerequisite_statuses(
-                    faction,
-                    sid,
-                    level,
-                    scenario=scenario,
-                )
-            )
-            plan = self._service.generate_build_plan(
-                faction,
-                sid,
-                level,
-                starting_date=self._state.starting_date,
-                scenario=scenario,
-            )
-            cost = plan.total_cost
-            orders = self._service.enumerate_build_orders(
-                faction,
-                sid,
-                level,
-                scenario=scenario,
-            )
-        except (QueryError, *SCENARIO_ERRORS) as exc:
-            self._show_error(exc)
-            return
-
-        self._state.store_results(
-            building=building,
-            prerequisite_statuses=statuses,
-            plan=plan,
-            cumulative_cost=cost,
-            build_orders=orders,
-        )
-        self._view.show_target(building)
-        self._view.show_prerequisites(statuses)
-        self._view.show_plan(plan, cost)
 
 
 class ScenarioAwareEconomyPresenter(
