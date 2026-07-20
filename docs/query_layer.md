@@ -2,17 +2,20 @@
 
 ## Purpose
 
-The Query Layer is the stable public interface to the backend. It answers
-planning questions by coordinating existing backend components while hiding
-implementation details.
+The Query Layer is the stable public interface to the backend. It answers planning and analysis questions by coordinating existing backend components while hiding implementation details.
 
 ## Responsibilities
 
-The Query Layer may coordinate existing database, graph, planner, scenario,
-comparison, decision-summary, recruitment-stock, resource-ledger, and
-localization modules, validate requests, return deterministic domain objects,
-and expose canonical discovery information. It must not parse assets, duplicate
-algorithms, expose connected backend state, or contain presentation logic.
+The Query Layer may coordinate database, graph, planner, scenario, comparison, decision-summary, recruitment-stock, resource-ledger, diagnostic, and localization modules; validate requests; return deterministic domain objects; and expose canonical discovery information.
+
+It must not:
+
+- parse assets directly;
+- duplicate backend algorithms;
+- expose connected backend state;
+- contain presentation logic;
+- own Planning Workspace lifecycle;
+- own debounce, scheduling, or stale-result policy.
 
 ## Initialization
 
@@ -22,265 +25,134 @@ from olden_db.query import PlanningQueryService
 queries = PlanningQueryService.from_default_game_data()
 ```
 
-Explicit construction remains available for tests and callers that already
-hold a `LoadedGameData` instance:
+Explicit construction remains available for tests and callers that already hold loaded game data.
 
-```python
-queries = PlanningQueryService(loaded_data)
-```
-
-The supplied backend data is private service state. Application clients must
-use only the documented Query Layer operations.
+The supplied backend data is private service state. Application clients must use only documented Query Layer operations.
 
 ## Discovery Interface
 
-Discovery methods return immutable tuples of canonical identifiers. They do not
-return localized text or expose backend collections.
+Discovery methods return immutable tuples of canonical identifiers.
 
 - `list_factions() -> tuple[str, ...]`
 - `list_buildings(faction) -> tuple[str, ...]`
 - `list_building_levels(faction, sid) -> tuple[int, ...]`
 
-Factions and building SIDs are returned in lexical order. Building levels are
-returned in ascending numeric order. Unknown factions raise
-`UnknownFactionError`; unknown SIDs raise `UnknownBuildingError`.
+Localized text is not identity.
 
 ## Planning Interface
+
+Supported planning operations include:
 
 - `get_building(...) -> BuildingLevel`
 - `get_prerequisites(...) -> tuple[BuildingLevel, ...]`
 - `get_prerequisite_statuses(..., scenario=None) -> tuple[PrerequisiteStatus, ...]`
 - `generate_build_plan(..., scenario=None) -> BuildPlan`
+- `generate_planner_result(..., scenario=None) -> PlannerResult`
 - `get_cumulative_cost(..., scenario=None) -> ResourceCost`
 - `enumerate_build_orders(..., scenario=None) -> tuple[tuple[BuildingKey, ...], ...]`
 - `compare_plans(...) -> PlanComparison`
 - `generate_decision_summary(...) -> DecisionSummary`
 - `generate_resource_ledger(...) -> ResourceLedger`
 
-When `scenario` is omitted or `None`, planning behavior remains identical to the
-Version 1.0 canonical behavior.
+`generate_build_plan(...)` remains supported for compatibility.
+
+`generate_planner_result(...)` is the preferred planning entry point for application workflows that need the canonical planning result and diagnostics through one deterministic pipeline.
+
+When `scenario` is omitted or `None`, planning behavior remains equivalent to canonical planning.
+
+## Planning Workspace Relationship
+
+The Planning Workspace is an application orchestration concept defined in `docs/planning_workspace_architecture.md`.
+
+It is not Query Layer state.
+
+The workspace may invoke Query Layer planning operations whenever an immutable planning selection changes. The Query Layer receives ordinary canonical inputs and returns deterministic results or documented failures.
+
+The Query Layer does not receive:
+
+- selection revision counters;
+- widget state;
+- debounce configuration;
+- base-view layout;
+- pending-state metadata;
+- stale-result policy.
+
+Continuous replanning, execution timing, and completion acceptance remain application concerns.
+
+For the initial interactive implementation, each workspace selection maps to one existing single-target planning request.
+
+A future multi-target operation or combined multi-base aggregation operation must be additive and receive separate architectural approval.
 
 ## Scenario-Aware Planning
 
-Scenario contracts are imported from `olden_db.scenario`:
+`PlanningScenario` is immutable and contains deterministic starting-building overrides identified by canonical `BuildingKey` values.
 
-```python
-from olden_db.scenario import (
-    PlanningScenario,
-    PrerequisiteStatus,
-    StartingBuildingOverride,
-)
-```
-
-`PlanningScenario` is immutable and contains deterministic starting-building
-overrides identified by canonical `BuildingKey` values. The Query Layer
-resolves an effective immutable starting-building set and passes only that set
-to dependency-graph construction. The planner remains scenario-independent.
+The Query Layer resolves the effective immutable starting-building set and passes only that set to dependency-graph construction. The planner remains scenario-independent.
 
 An empty `PlanningScenario()` is behaviorally equivalent to canonical planning.
-Scenario-aware plan, cost, and build-order queries must receive the same
-scenario object to describe the same hypothetical starting state.
 
-`get_prerequisite_statuses()` returns one immutable `PrerequisiteStatus` for
-each direct prerequisite, in deterministic SID and level order. Each status
-contains:
+Related plan, cost, order, status, and ledger requests must receive the same immutable scenario to describe the same hypothetical state.
 
-- `building`: the canonical `BuildingLevel`;
-- `available_at_start`: effective scenario availability;
-- `overridden`: whether effective availability differs from the canonical
-  `constructed_on_start` value.
+Clients must use scenario-aware Query Layer results rather than infer effective state from canonical building fields.
 
-Clients must use this result rather than interpreting
-`BuildingLevel.constructed_on_start` as scenario state.
+## Plan Comparison and Decision Summaries
 
-## Plan Comparison
+`compare_plans()` generates each side independently through the authoritative planning pipeline and delegates comparison calculations to the comparison module.
 
-`compare_plans()` is the public Query Layer entry point for pairwise plan
-comparison. It accepts explicit left and right targets, independent optional
-scenarios, and one shared starting date.
-
-The Query Layer generates each `BuildPlan` independently through the existing
-planning pipeline and delegates all comparison calculations to
-`compare_build_plans()` in `olden_db.comparison`. It does not duplicate action,
-date, resource, or membership-difference logic.
-
-The returned immutable `PlanComparison` follows right-minus-left semantics.
-Positive deltas mean the right plan has more actions, finishes later, or costs
-more. Independent scenarios support canonical-to-canonical,
-canonical-to-scenario, and scenario-to-scenario comparisons.
-
-## Decision Summaries
-
-`generate_decision_summary()` mirrors `compare_plans()` and supports the same
-explicit left and right targets, independent scenarios, and shared starting
-date.
-
-The Query Layer first delegates plan generation and comparison to
-`compare_plans()`. It then passes the resulting `PlanComparison` directly to
-`summarize_plan_comparison()` in `olden_db.decision_summary`.
-
-The Query Layer does not duplicate comparison calculations or construct
-decision observations. The returned immutable `DecisionSummary` contains
-structured facts only; formatting, recommendation, preference, ranking, and
-presentation remain client responsibilities.
+`generate_decision_summary()` delegates planning and comparison, then returns structured facts. Recommendation and presentation remain client responsibilities.
 
 ## Resource Ledgers
 
-`generate_resource_ledger()` is the public Query Layer entry point for
-income-aware construction and recruitment accounting. It accepts a canonical
-faction and target, a starting date, an optional `PlanningScenario`, an
-immutable tuple of `RecruitmentAction` values, and an explicit starting
-`ResourceCost`.
+`generate_resource_ledger()` is the public entry point for income-aware construction and recruitment accounting.
 
-The Query Layer resolves the effective starting-building set exactly once and
-reuses that same immutable set throughout the full orchestration pipeline:
+The Query Layer resolves one effective starting state and reuses it throughout plan, income, stock, and ledger generation.
 
-```text
-PlanningScenario
-        |
-        v
-effective frozenset[BuildingKey]
-        |
-        +--> BuildPlan
-        +--> IncomeTimeline
-        +--> RecruitmentStock
-        +--> ResourceLedger
-```
+The automatic income model includes certified deterministic town-building income and excludes stochastic or user-unmodeled map income.
 
-The required evaluation horizon is the latest of the plan completion date and
-all recruitment-action dates. `IncomeTimeline` and `RecruitmentStock` are both
-generated through that same inclusive date, so they cannot describe different
-time ranges.
+## Public Contract
 
-Application clients do not receive or manage the effective starting set and do
-not construct intermediate plans, income timelines, stock objects, or ledgers.
-Deterministic town-building income is included automatically.
+Application clients may import supported Query Layer interfaces from `olden_db.query` and documented stable domain contracts from their defining modules.
 
-The Query Layer delegates:
+The Query Layer is the supported application-facing backend entry point.
 
-- prerequisite traversal to the graph;
-- construction dates and costs to the planner;
-- income timing and source events to `calculate_income_timeline()`;
-- creature availability to `calculate_recruitment_stock()`;
-- balances, spending, feasibility, and deficits to `build_resource_ledger()`.
+Internal parser, database, graph, path, and planner-algorithm implementation details remain private to the backend.
 
-It does not inspect `BuildingLevel.income`, reproduce income activation or
-upgrade replacement, reproduce stock progression, or duplicate accounting
-logic. The returned ledger therefore guarantees one faction, one scenario, one
-starting date, one effective starting state, and one evaluation horizon across
-its plan, income, stock, and accounting data.
+## Behavioral Guarantees
 
-The automatic income model includes only certified deterministic town-building
-income. It excludes map pickups, mines, combat rewards, user-dated external
-income, and other uncertain income sources.
-
-## Version 1.0 Public Contract
-
-### Public Modules
-
-Application clients may import the following supported Query Layer interfaces
-from `olden_db.query`:
-
-```python
-from olden_db.query import (
-    PlanningQueryService,
-    QueryError,
-    UnknownFactionError,
-    UnknownBuildingError,
-)
-```
-
-`olden_db.query` is the supported application-facing backend entry point for
-Version 1.0.
-
-### Stable Public Domain Contracts
-
-The Query Layer intentionally returns existing domain objects rather than
-introducing wrapper types or data-transfer objects.
-
-The following domain types are stable parts of the Version 1.0 public
-contract:
-
-- `BuildingKey`
-- `BuildingLevel`
-- `ResourceCost`
-- `GameDate`
-- `BuildPlan`
-- `BuildStep`
-
-Application clients may import these types from their existing defining
-modules:
-
-```python
-from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
-from olden_db.planner import BuildPlan, BuildStep, GameDate
-```
-
-These objects may be inspected through their documented fields and properties
-when returned by Query Layer operations.
-
-### Internal Backend Modules
-
-The following modules are backend implementation details and are not part of
-the Version 1.0 public API:
-
-- `olden_db.parser`
-- `olden_db.unit_parser`
-- `olden_db.database`
-- `olden_db.graph`
-- `olden_db.localization`
-- `olden_db.paths`
-
-Application clients must not import these modules directly. Their internal
-structure and implementation may change without constituting a public API
-change, provided the documented Query Layer contract continues to be
-satisfied.
-
-### Behavioral Guarantees
-
-Version 1.0 guarantees the following behavior:
-
-- Canonical SIDs are the authoritative identifiers.
+- Canonical SIDs and `BuildingKey` values are authoritative identifiers.
 - Query operations are deterministic for identical game data and inputs.
-- `list_factions()` returns faction IDs in lexical order.
-- `list_buildings(faction)` returns unique building SIDs in lexical order.
-- `list_building_levels(faction, sid)` returns levels in ascending numeric
-  order.
-- Discovery methods return immutable tuples.
-- Invalid Query Layer requests raise documented Query Layer exceptions rather
-  than exposing lower-level backend lookup errors.
-- Canonical application initialization is available through
-  `PlanningQueryService.from_default_game_data()`.
+- Discovery results are immutable and deterministically ordered.
+- Invalid requests raise documented Query Layer exceptions rather than leaking lower-level lookup failures.
+- Canonical initialization is available through `PlanningQueryService.from_default_game_data()`.
+- Existing `generate_build_plan(...)` callers remain compatible.
+- Empty scenarios preserve canonical output.
+- Query Layer behavior is independent of UI event frequency and execution scheduling.
 
-Localization remains a presentation concern and does not replace canonical
-identifiers.
+## Compatibility Policy
 
-### Compatibility Policy
+Documented Query Layer methods, exceptions, stable domain contracts, and behavioral guarantees are public API.
 
-The following are part of the Version 1.0 public API:
+Changes to those contracts require explicit architectural review.
 
-- documented `PlanningQueryService` methods;
-- documented Query Layer exceptions;
-- documented stable domain contracts;
-- documented behavioral guarantees.
-
-Changes to any of these constitute public API changes and should receive
-explicit architectural review before implementation.
-
-Internal implementation details may evolve without review as public API
-changes, provided the documented Version 1.0 contract remains intact.
+Internal implementation may evolve provided the documented public behavior remains satisfied.
 
 ## Validation
 
-From the outer `olden_db/` directory:
+Validation must cover:
 
-```bash
-python -m scripts.test_query
-python -m scripts.test_query_initialization
-python -m scripts.test_query_discovery
-python -m scripts.test_query_scenarios
-python -m scripts.test_query_comparison
-python -m scripts.test_query_decision_summary
-python -m scripts.test_query_resource_ledger
-python -m scripts.test_query_income_resource_ledger
+- canonical planning;
+- initialization and discovery;
+- scenario equivalence and overrides;
+- `generate_planner_result(...)`;
+- diagnostics;
+- comparisons and decision summaries;
+- resource ledgers;
+- deterministic repeated calls;
+- compatibility of `generate_build_plan(...)`;
+- absence of workspace or UI lifecycle state in Query Layer contracts.
+
+Use repository-provided test modules with:
+
+```text
+python -m scripts...
 ```

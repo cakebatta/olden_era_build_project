@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document defines the architectural boundaries for the first desktop application built on top of Query Layer Version 1.0.
+This document defines architectural boundaries for the desktop application built on the Query Layer.
 
-The desktop application should make deterministic planning workflows accessible without coupling presentation code to parser, database, graph, localization, path, or planner-algorithm internals.
+The desktop makes deterministic planning workflows accessible without coupling presentation code to parser, database, graph, localization, path, or planner-algorithm internals.
 
-This specification defines structure and ownership. User-facing workflows are documented separately.
+User-facing workflows are documented separately.
 
 ## Architectural Position
 
@@ -15,207 +15,241 @@ Game Assets
     ↓
 Backend Parsers and Models
     ↓
-Planning and Graph Algorithms
+Planning, Economy, and Diagnostic Algorithms
     ↓
-Query Layer Version 1.0
+Query Layer
     ↓
-Desktop Application
+Planning Workspace and Application Orchestration
+    ↓
+Desktop Presenters and Views
 ```
 
 The desktop application is a client of the Query Layer.
 
-It may use the documented stable domain contracts accepted or returned by the Query Layer, but it must not invoke internal backend modules directly.
+It may use documented stable contracts accepted or returned by the Query Layer, but it must not invoke internal backend modules directly.
 
-## Initial Product Scope
+## Current Product Direction
 
-The first desktop milestone is a Build Planner application.
+The primary desktop workflow is an interactive Planning Workspace.
 
-It should allow a user to:
+The user should be able to:
 
-- discover available factions;
-- discover buildings for a selected faction;
-- discover valid levels for a selected building;
-- generate one deterministic build plan;
-- inspect direct prerequisites;
-- inspect construction steps and dates;
-- inspect individual and cumulative resource costs;
-- inspect a bounded set of alternative legal build orders.
+- discover factions and buildings;
+- select one canonical planning target per active base;
+- change hypothetical starting state;
+- receive automatic plan and diagnostic updates;
+- inspect construction steps, dates, costs, and completion information;
+- revise the selection without repeatedly invoking a separate Generate action;
+- retain a clearly marked previous summary while a replacement is pending;
+- later coordinate multiple independent base plans.
 
-Future analysis modules must not complicate the initial planner architecture.
+The initial Sprint 13 implementation remains single-base and single-target. Multi-target planning, multi-base UI behavior, and combined resource aggregation require later work.
 
 ## Technology Decision
 
-Use the Python standard-library `tkinter` toolkit for the initial desktop application.
+Use the Python standard-library `tkinter` toolkit unless concrete requirements justify a reviewed change.
 
-Reasons:
-
-- no new runtime dependency;
-- suitable for the current single-window planning workflow;
-- consistent with the project's preference for minimal dependencies;
-- sufficient for validating application architecture and user workflows.
-
-This decision may be revisited if concrete requirements exceed `tkinter`'s capabilities.
+The application should continue to prefer minimal dependencies and explicit ownership.
 
 ## Application Structure
 
-Preferred package structure:
+Preferred package responsibilities:
 
 ```text
 olden_db/
     desktop/
-        __init__.py
         app.py
         state.py
+        workspace.py
+        execution.py
         views/
-            __init__.py
-            planner_view.py
         presenters/
-            __init__.py
-            planner_presenter.py
         formatting.py
 ```
 
-### `app.py`
+Exact filenames may evolve, but responsibilities must remain separated.
 
-Owns application startup, root-window creation, `PlanningQueryService` construction, top-level dependency wiring, navigation, and shutdown.
+### Application startup
 
-### `state.py`
+Owns root-window creation, one application-scoped `PlanningQueryService`, the active `PlanningWorkspace`, execution coordination, top-level dependency wiring, navigation, and shutdown.
 
-Owns minimal shared selection state, such as selected faction, building SID, level, starting date, latest plan, and alternative-order limit.
+### Workspace and state
+
+Own semantic application state:
+
+- active base entries;
+- immutable planning selection;
+- selection revision;
+- execution status;
+- latest accepted result;
+- current failure;
+- transient UI-independent workspace state.
+
+It must not store widgets, localized labels as identity, or planner algorithms.
 
 Do not introduce a generic state-management framework.
 
-### `views/`
+### Execution coordination
 
-Owns widget construction, input collection, local widget state, display, and validation messages.
+Owns when Query Layer planning is invoked and whether a completion is still current.
 
-Views must not implement planning rules or query backend internals.
+The initial implementation uses synchronous calls and revision-based stale-result protection.
 
-### `presenters/`
+Debounce, background execution, and cooperative cancellation remain deferred until measured responsiveness requires them.
 
-Owns coordination between views, application state, and `PlanningQueryService`.
+### Views
 
-Presenters may call Query Layer methods, translate Query Layer errors, update state, and supply structured results to views.
+Own widget construction, accessibility, focus, local interaction mechanics, display, and validation messages.
 
-Use plain Python presenter classes. Do not introduce MVVM frameworks or event-bus abstractions.
+Views report semantic actions. They must not implement planning rules, result-validity rules, or query backend internals.
 
-### `formatting.py`
+### Presenters
 
-Owns pure presentation formatting for stable public domain contracts, including resource costs, game dates, building identities, and plan steps.
+Own coordination between views, workspace state, execution coordination, and `PlanningQueryService`.
 
-## Window and Navigation Model
+Presenters may:
 
-Use one primary application window.
+- translate UI actions into semantic selection commands;
+- apply workspace mutations;
+- request execution;
+- translate documented Query Layer errors;
+- supply immutable presentation models;
+- render pending, ready, failed, and retained-previous-result states.
 
-Preferred layout:
+Presenters must not derive prerequisite legality, costs, diagnostics, or effective scenario state.
 
-```text
-┌──────────────────────────────────────────────────────┐
-│ Application title                                    │
-├───────────────┬──────────────────────────────────────┤
-│ Navigation    │ Active module                        │
-│               │                                      │
-│ Build Planner │ Planner controls and results         │
-│               │                                      │
-├───────────────┴──────────────────────────────────────┤
-│ Status / validation message                          │
-└──────────────────────────────────────────────────────┘
-```
+Use plain Python presenter classes. Do not introduce MVVM frameworks or global event buses.
 
-For the first milestone, Build Planner may be the only active navigation item.
+### Formatting
 
-Use dialogs only for brief errors, confirmations, focused settings, or file selection.
+Owns pure presentation formatting for stable public domain contracts, including resource costs, game dates, building identities, plan steps, diagnostics, and workspace statuses.
 
-## Planner View Responsibilities
-
-### Target Selection
-
-Controls for faction, building SID, building level, and optional starting date.
-
-Selectors must be populated through Query Layer discovery methods.
-
-Changing an upstream selection should clear invalid downstream state.
-
-### Plan Results
-
-Display target identity, direct prerequisites, construction sequence, dates, individual step costs, cumulative costs, and total cost.
-
-The results region should support scrolling.
-
-### Alternative Orders
-
-Display a bounded number of legal build orders.
-
-The user must choose or accept a finite safe limit.
-
-## State Ownership
-
-Construct one application-scoped `PlanningQueryService` during startup.
-
-Views must not construct their own query services.
-
-Suggested ownership:
+## Planning Workspace Ownership
 
 ```text
 Application
-    owns Query Service
-    owns Application State
-    owns Planner Presenter
+    owns PlanningQueryService
+    owns PlanningWorkspace
+    owns PlanningExecutionCoordinator
+    owns WorkspacePresenter
 
-Planner Presenter
-    reads/writes Application State
-    calls Query Service
-    updates Planner View
+PlanningWorkspace
+    owns semantic selections
+    owns revisions
+    owns accepted results and current failures
 
-Planner View
+PlanningExecutionCoordinator
+    captures immutable selection snapshots
+    calls PlanningQueryService
+    rejects stale completions
+
+WorkspacePresenter
+    handles semantic actions
+    renders workspace snapshots
+
+View
     owns widgets
     reports user actions
-    renders supplied results
+    renders supplied presentation models
 ```
 
 Prefer explicit callbacks over a global event bus.
 
+## Planning Selection
+
+For the initial interactive implementation, one base entry contains exactly one requested canonical target plus its starting date and immutable `PlanningScenario`.
+
+The planning model must not contain:
+
+- checkbox variables;
+- widget IDs;
+- drag coordinates;
+- mouse or keyboard events;
+- localized names as identity.
+
+Changing interaction mechanisms must not require planner or Query Layer redesign.
+
+## Revision and Result Lifecycle
+
+Every semantic selection mutation increments the base entry's selection revision.
+
+Execution captures the immutable selection and revision.
+
+A completion is accepted only if its revision still matches the current selection. Older completions are discarded.
+
+Recommended statuses:
+
+```text
+EMPTY
+INCOMPLETE
+PENDING
+READY
+FAILED
+```
+
+The latest accepted result may remain visible while a replacement is pending or after the current request fails, but the view must identify it as retained previous information rather than current output.
+
 ## Query Layer Integration
 
-All backend operations must use documented Query Layer Version 1.0 methods.
+All backend operations must use documented Query Layer methods.
 
-The desktop application may import stable public domain contracts identified in `docs/query_layer.md`.
+The desktop may import documented stable public domain contracts. It must not import parser, unit parser, database, graph, localization, path, or planner-algorithm internals.
 
-It must not import parser, unit parser, database, graph, localization, path, or planner-algorithm internals.
+Missing capabilities must be reported and addressed through a reviewed Query Layer evolution.
 
-Missing capabilities must be reported rather than bypassed.
+Continuous replanning is an application concern. Query Layer operations remain stateless and deterministic.
+
+## Scenario Integration
+
+Each base entry owns its own immutable `PlanningScenario`.
+
+The Query Layer remains authoritative for effective starting-building state.
+
+A scenario edit creates a new planning selection revision and triggers replanning when the selection is complete.
+
+Scenario state is not inferred from canonical building fields.
+
+## Multi-Base Direction
+
+The workspace is an ordered collection of base entries with stable application identities.
+
+The product may initially expose one base, then two, and later up to five without changing planner algorithms.
+
+Per-base results remain authoritative and distinct.
+
+Future combined resource summaries require a separate deterministic aggregation contract and must preserve base attribution.
 
 ## Localization
 
-Canonical SIDs remain the source of identity.
+Canonical identifiers remain the source of identity.
 
 Localized names are supplementary presentation and must never become lookup keys.
-
-If public localization access is insufficient, create a narrowly scoped Query Layer evolution task before implementing the dependent UI feature.
 
 ## Error Handling
 
 Expected user errors should be handled without tracebacks.
 
-The presenter should translate Query Layer exceptions into concise user-facing messages.
+Presenters translate documented Query Layer failures into concise user-facing state while preserving canonical diagnostic meaning.
 
-Unexpected exceptions should not be silently swallowed.
-
-A full logging framework is not required initially.
+Unexpected exceptions must not be silently swallowed.
 
 ## Responsiveness
 
 Run initial queries synchronously.
 
-Do not introduce threading or asynchronous infrastructure unless measured operations make the interface noticeably unresponsive.
+Do not introduce threading, asynchronous infrastructure, or debounce unless measured operations make the interface noticeably unresponsive.
+
+Even synchronous implementations must enforce revision-based result acceptance so later execution optimization does not change semantics.
 
 ## Validation Strategy
 
 Desktop milestones should include:
 
-- focused tests for pure formatting functions;
-- presenter tests where practical;
-- manual interaction checks;
+- focused tests for pure formatting;
+- workspace lifecycle and revision tests;
+- presenter tests;
+- stale-result rejection tests;
+- manual interaction checks supplied to the Project Owner;
 - architectural import-boundary review;
 - full backend regression commands.
 
@@ -225,51 +259,36 @@ Terminal commands must use:
 python -m scripts...
 ```
 
-The Project Owner performs local runtime verification.
-
-## Future Module Map
-
-Potential future modules:
-
-- Build Planner
-- Strategy Comparison
-- Building Browser
-- Unit Browser
-- Economy Analysis
-- Settings
-- Help / About
-
-Do not create empty modules solely for anticipated features.
+The Project Owner performs local runtime verification. QA performs static certification and does not claim runtime execution.
 
 ## Non-Goals
 
-The initial architecture does not include web services, network APIs, plugin systems, dependency-injection containers, global event buses, background-worker frameworks, persistence databases, combat simulation, stochastic map simulation, or AI simulation.
+The current architecture does not approve:
 
-## Initial Desktop Milestone Boundary
-
-The first implementation milestone should:
-
-- launch successfully;
-- construct the Query Layer through its canonical factory;
-- display one root window;
-- include a stable navigation region;
-- include an empty or minimally wired Build Planner view;
-- keep UI files separated according to this specification;
-- introduce no backend changes;
-- establish clean shutdown.
-
-It should not implement the full planner workflow yet.
+- web services;
+- network APIs;
+- plugin systems;
+- dependency-injection containers;
+- global event buses;
+- background-worker frameworks;
+- persistence databases;
+- multi-target planning;
+- combined multi-base aggregation;
+- combat simulation;
+- stochastic map simulation;
+- AI simulation.
 
 ## Architectural Review Questions
 
-1. Does the UI use only the Query Layer and documented public contracts?
-2. Is presentation separated from backend operations?
-3. Is state explicit and narrowly scoped?
-4. Can future modules be added without redesigning the root window?
-5. Has unnecessary framework complexity been avoided?
-6. Can the feature be validated independently?
-7. Did documentation change where architectural intent changed?
+1. Does the desktop use only the Query Layer and documented public contracts?
+2. Is semantic planning state independent of widgets?
+3. Are selection revisions and accepted-result revisions explicit?
+4. Can an old completion replace newer state?
+5. Are presentation and backend behavior separated?
+6. Can a second base be added without planner redesign?
+7. Has unnecessary framework complexity been avoided?
+8. Did documentation change where architectural intent changed?
 
 ## Success Criteria
 
-This architecture succeeds if the planner workflow can be implemented without bypassing the Query Layer, future modules can be added without restructuring the root application, backend changes remain isolated behind Version 1.0, and a new UI engineer can identify where each kind of code belongs.
+This architecture succeeds when the application can replan automatically from semantic selection changes, stale results cannot become current, the planner remains deterministic and UI-independent, the Query Layer remains authoritative, and the workspace can scale from one base to multiple bases without replacing the core model.

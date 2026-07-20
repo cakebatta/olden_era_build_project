@@ -4,7 +4,7 @@
 
 This document defines hypothetical starting conditions without modifying canonical game data.
 
-The first scenario feature allows users to override whether individual buildings are treated as available at the beginning of a plan. Canonical planning remains the default baseline.
+`PlanningScenario` is semantic planning input. It is distinct from both canonical parsed state and the broader application-level `PlanningSelection`.
 
 ## Canonical Data
 
@@ -12,7 +12,7 @@ The first scenario feature allows users to override whether individual buildings
 
 Scenario planning must never mutate parsed buildings, cities, loaded databases, validation exports, or source assets.
 
-When no scenario is supplied, existing Query Layer Version 1.0 behavior must remain unchanged.
+When no scenario is supplied, canonical Query Layer behavior remains unchanged.
 
 ## Terminology
 
@@ -20,10 +20,14 @@ When no scenario is supplied, existing Query Layer Version 1.0 behavior must rem
 - **Effective starting state:** Canonical state after scenario overrides.
 - **Canonical plan:** Plan generated without overrides.
 - **Scenario plan:** Plan generated with explicit overrides.
+- **Planning selection:** Application-level player intent containing one target, date, and scenario for the initial interactive release.
+- **Workspace state:** Transient application orchestration state, including revisions, pending status, accepted results, and failures.
 
 ## Public Scenario Contracts
 
-Introduce small immutable public contracts, conceptually:
+Scenario contracts are immutable and use canonical `BuildingKey` identity.
+
+Conceptually:
 
 ```python
 @dataclass(frozen=True, slots=True, order=True)
@@ -39,60 +43,27 @@ class PlanningScenario:
 
 Requirements:
 
-- Canonical `BuildingKey` identifies buildings.
-- Duplicate overrides are rejected.
-- Ordering is deterministic.
-- Empty scenarios are valid.
-- Empty scenarios are behaviorally equivalent to canonical planning.
-- Localized names are never identifiers.
+- duplicate overrides are rejected;
+- ordering is deterministic;
+- empty scenarios are valid;
+- empty scenarios are equivalent to canonical planning;
+- localized names are never identifiers;
+- unknown, malformed, duplicate, or cross-faction overrides are rejected.
 
 ## Override Semantics
 
 For each building:
 
-1. Use the scenario override when one exists.
-2. Otherwise use canonical `constructed_on_start`.
+1. use the scenario override when present;
+2. otherwise use canonical `constructed_on_start`.
 
-### Available at start: `True`
+When available at start is `True`, the building satisfies prerequisites, is excluded from construction actions and costs, stops prerequisite traversal, and consumes no construction day.
 
-- Satisfies prerequisites.
-- Is excluded from construction actions and costs.
-- Stops prerequisite traversal at that building.
-- Does not consume a construction day.
+When available at start is `False`, the building must be constructed when required and its prerequisite closure, cost, construction day, and legal-order membership are included.
 
-### Available at start: `False`
+## Graph and Planner Integration
 
-- Must be constructed when required.
-- Its prerequisite closure is traversed.
-- Its cost and construction day are included.
-- It appears in legal build orders.
-
-Any existing building in the selected faction may be overridden. A prebuilt building is treated as a supplied starting condition even when its own prerequisites are unavailable.
-
-Reject unknown, malformed, duplicate, or cross-faction overrides.
-
-## Graph Integration
-
-Effective starting availability should become an explicit graph input.
-
-Preferred direction:
-
-```python
-build_dependency_graph(
-    city,
-    target,
-    *,
-    starting_buildings=effective_starting_buildings,
-)
-```
-
-When omitted, graph behavior remains canonical.
-
-The graph remains responsible for prerequisite traversal, satisfied boundary nodes, graph nodes, and dependency edges.
-
-## Planner Integration
-
-The planner should continue consuming a dependency graph and legal order.
+Effective starting availability is an explicit graph input.
 
 ```text
 PlanningScenario
@@ -103,170 +74,93 @@ Dependency Graph
     ↓
 Planner
     ↓
-BuildPlan
+PlannerResult
 ```
 
-The desktop must not reproduce graph or planning rules.
+The planner continues to consume a dependency graph and legal order. It remains scenario-independent.
 
-## Query Layer Evolution
+The desktop must not reproduce graph, planning, or effective-state rules.
 
-Add scenario support compatibly, conceptually:
+## Query Layer Integration
 
-```python
-generate_build_plan(
-    faction,
-    sid,
-    level,
-    *,
-    starting_date=GameDate(1, 1, 1),
-    scenario: PlanningScenario | None = None,
-)
+Scenario support is additive to planning, cost, order, prerequisite-status, diagnostic, and ledger operations.
+
+Both canonical and scenario planning share one authoritative pipeline.
+
+`BuildPlan.total_cost` remains authoritative. Related queries must receive identical scenario inputs when they describe the same hypothetical state.
+
+## Planning Workspace Integration
+
+Each base entry in the Planning Workspace owns its own immutable `PlanningScenario` as part of its semantic `PlanningSelection`.
+
+For the initial interactive implementation, one selection contains:
+
+```text
+faction
+one canonical target
+starting date
+PlanningScenario
 ```
 
-Apply the same optional scenario to:
+A scenario edit creates a new selection revision.
 
-- `get_cumulative_cost()`
-- `enumerate_build_orders()`
+If the selection is complete, the application marks it pending and replans automatically through the Query Layer.
 
-Both canonical and scenario planning must share one authoritative pipeline.
+The workspace, not the scenario contract, owns:
 
-Because `BuildingLevel.constructed_on_start` remains canonical, add a scenario-aware prerequisite-status result, conceptually:
+- revision counters;
+- pending, ready, and failed states;
+- accepted prior results;
+- stale-completion rejection;
+- in-flight execution state.
 
-```python
-@dataclass(frozen=True, slots=True)
-class PrerequisiteStatus:
-    building: BuildingLevel
-    available_at_start: bool
-    overridden: bool
-```
+The scenario remains pure semantic input.
 
-The desktop must not infer effective status from the canonical field.
+## Result Lifecycle
 
-## Cost Consistency
+The previous rule that scenario changes simply clear all results is superseded by the Planning Workspace lifecycle.
 
-The same immutable scenario object must be passed to every related query.
+On a scenario change:
 
-`BuildPlan.total_cost` remains authoritative. Any separate cumulative-cost query must use identical scenario inputs.
+1. create a new immutable planning selection;
+2. increment the selection revision;
+3. mark the entry pending or incomplete;
+4. execute planning when complete;
+5. accept only a completion matching the current revision.
 
-## Desktop State
+The latest accepted result may remain visible during replacement or after failure, but presentation must clearly identify it as retained previous information.
 
-Desktop state must distinguish:
-
-- canonical target selection;
-- active scenario;
-- current scenario result.
-
-Scenario changes clear prerequisite statuses, plan steps, costs, completion date, and alternative orders. Target selection may remain.
+An old result must never be represented as current for the new scenario.
 
 ## Desktop Controls
 
 The UI Engineer owns exact interaction design.
 
-Recommended first control:
+Controls may represent effective starting availability with checkboxes, but checkbox state is not the scenario or planning contract.
 
-```text
-Checked   = available at plan start
-Unchecked = must be constructed if required
-```
+Canonical and effective values must remain distinguishable, and reset-to-canonical behavior removes redundant overrides rather than storing them.
 
-Display canonical and effective values clearly:
+## Multi-Base Direction
 
-```text
-[✓] Wall   Canonical: available
-[ ] Wall   Canonical: available · Overridden
-```
+Each base entry owns an independent scenario.
 
-Provide:
+A future workspace may contain up to five base entries without changing scenario semantics or planner behavior.
 
-```text
-Reset to Canonical Starting State
-```
-
-Resetting removes overrides rather than storing redundant values.
-
-## Result Presentation
-
-Clearly label the planning mode:
-
-```text
-Planning mode: Canonical
-```
-
-or:
-
-```text
-Planning mode: Custom starting state
-Overrides: 1
-```
-
-Use effective statuses such as:
-
-- `Available at scenario start`
-- `Requires construction`
-- `Available at scenario start (user override)`
-
-Do not describe an overridden building as canonically constructed at game start.
+Workspace-level settings must not be made global merely because an early UI presents only one control.
 
 ## Canonical Baseline
 
-An empty scenario must produce exactly the same graph, steps, dates, costs, completion date, legal orders, and statuses as canonical planning.
+An empty scenario must produce the same graph, steps, dates, costs, completion date, legal orders, statuses, diagnostics, and ledger behavior as canonical planning.
 
-Canonical mode remains the default and regression baseline.
-
-## Required Regression Scenarios
-
-### Remove a canonical starting prerequisite
-
-Target:
-
-```text
-Faction: undead
-SID: Build_Tier_6
-Level: 1
-```
-
-Override:
-
-```text
-Build_Wall level 1 → available_at_start=False
-```
-
-Expected direction:
-
-- Wall becomes a construction action.
-- Required Wall prerequisites are included.
-- Action count and completion date increase.
-- Wall cost is included.
-- Its status becomes `Requires construction`.
-
-Exact results must be derived from canonical data during implementation and encoded in tests.
-
-### Add a noncanonical starting building
-
-Choose a target with a normally unavailable prerequisite.
-
-Expected:
-
-- Overridden building disappears from actions.
-- Traversal stops at it.
-- Cost and completion time decrease.
-- Status indicates scenario-start availability.
-
-### Empty scenario and determinism
-
-Empty scenario equals canonical output. Repeated identical scenario planning returns identical results.
-
-## Alternative Build Orders
-
-Alternative build-order UI remains deferred until scenario-aware planning is certified.
-
-Primary plan and alternatives must use the same scenario, deterministic ordering, and finite result limit.
+Canonical mode remains the default regression baseline.
 
 ## Compatibility
 
-Treat this as additive Query Layer evolution, conceptually Version 1.1.
+Scenario planning remains additive.
 
-Version 1.0 canonical calls remain supported.
+Existing canonical calls remain supported.
+
+The Planning Workspace does not replace `PlanningScenario`; it composes it into a broader semantic selection and transient execution lifecycle.
 
 ## Validation
 
@@ -277,27 +171,29 @@ Backend validation must cover:
 - true and false overrides;
 - canonical equivalence;
 - deterministic scenario plans;
-- scenario-aware costs and legal orders;
+- scenario-aware costs, diagnostics, and legal orders;
 - invalid and cross-faction overrides.
 
-UI validation must cover toggles, reset, override indicators, stale-result clearing, effective status wording, and canonical preservation.
+Workspace and UI validation must cover:
 
-QA must verify canonical data is unchanged after scenario planning.
+- scenario edits increment revisions;
+- automatic replanning;
+- stale-result rejection;
+- retained-result labeling;
+- reset behavior;
+- canonical preservation.
 
-## Task Sequence
-
-1. **PM-013 — Scenario Planning Architecture**
-2. **BE-010 — Scenario Contracts and Graph Support**
-3. **BE-011 — Scenario-Aware Query Layer**
-4. **QA — Backend Scenario Certification**
-5. **UI-006 — Starting-State Controls**
-6. **QA — End-to-End Scenario Certification**
-7. **UI — Alternative Legal Build Orders**
+QA performs static certification. The Project Owner performs runtime verification using engineer-supplied commands.
 
 ## Non-Goals
 
-The first scenario release excludes resource-income assumptions, prebuilt dates, partial payments, save-file import, persistence, comparison, optimization, combat, and random map simulation.
+Scenario architecture does not define:
 
-## Success Criteria
-
-Scenario planning succeeds when canonical data remains immutable, empty scenarios preserve canonical output, overrides deterministically change traversal/dates/costs/orders, the Query Layer owns semantics, the desktop owns only interaction and presentation, and canonical and custom modes are visibly distinct.
+- multi-target planning;
+- resource-income assumptions beyond approved deterministic models;
+- partial payments;
+- save-file import;
+- optimization;
+- combat;
+- random map simulation;
+- execution scheduling or debounce.
