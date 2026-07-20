@@ -27,6 +27,8 @@ from olden_db.planner import (
     plan_build_order_result,
     validate_plan_set,
 )
+from olden_db.planning_execution import PlanningExecutionCoordinator
+from olden_db.planning_workspace import PlanningWorkspace
 from olden_db.planner_diagnostics import (
     PlannerDiagnostic,
     PlannerDiagnosticCategory,
@@ -387,6 +389,7 @@ class RecordingView:
         self.diagnostic_batches: list[
             tuple[PlannerDiagnosticPresentation, ...]
         ] = []
+        self.workspace_presentations: list[object] = []
 
     def clear_results(self) -> None:
         self.clear_count += 1
@@ -412,6 +415,12 @@ class RecordingView:
         diagnostics: tuple[PlannerDiagnosticPresentation, ...],
     ) -> None:
         self.diagnostic_batches.append(tuple(diagnostics))
+
+    def render_workspace(self, presentation) -> None:
+        self.workspace_presentations.append(presentation)
+        self.diagnostic_batches.append(tuple(presentation.diagnostics))
+        if presentation.failure_message:
+            self.errors.append(presentation.failure_message)
 
 
 class RecordingService:
@@ -443,6 +452,7 @@ class RecordingService:
         sid: str,
         level: int,
         *,
+        starting_date=GameDate(1, 1, 1),
         scenario,
     ) -> PlannerResult:
         self.generate_calls += 1
@@ -483,19 +493,32 @@ def test_presenter_orchestrates_success_diagnostics_to_recording_view() -> None:
     view = RecordingView()
     statuses: list[str] = []
     state = ready_state()
-    presenter = PlannerPresenter(service, state, view, statuses.append)
+    workspace = PlanningWorkspace.create()
+    coordinator = PlanningExecutionCoordinator(service)
+    presenter = PlannerPresenter(
+        service,
+        workspace,
+        coordinator,
+        state,
+        view,
+        statuses.append,
+    )
 
     presenter.on_generate_plan()
 
     require(service.generate_calls == 1, "Presenter did not use planner-result query")
     require(state.current_plan is result.plan, "Presenter did not store canonical plan")
-    require(view.plans == [(result.plan, result.plan.total_cost)], "Plan was not rendered")
-    require(not view.errors, "Successful planning displayed an error")
-    require(len(view.diagnostic_batches) == 1, "Success diagnostics were not delivered")
-    expected = adapt_planner_diagnostics(diagnostics)
-    require(view.diagnostic_batches[0] == expected, "Success adapter output changed")
+    require(len(view.workspace_presentations) == 2, "Pending and ready states were not rendered")
     require(
-        tuple(item.explanation for item in view.diagnostic_batches[0])
+        view.workspace_presentations[-1].accepted_plan is result.plan,
+        "Accepted plan was not rendered through workspace presentation",
+    )
+    require(not view.errors, "Successful planning displayed an error")
+    require(len(view.diagnostic_batches) == 2, "Workspace diagnostics were not delivered")
+    expected = adapt_planner_diagnostics(diagnostics)
+    require(view.diagnostic_batches[-1] == expected, "Success adapter output changed")
+    require(
+        tuple(item.explanation for item in view.diagnostic_batches[-1])
         == tuple(item.canonical_explanation for item in diagnostics),
         "Presenter or adapter rewrote canonical explanations",
     )
@@ -516,20 +539,30 @@ def test_presenter_orchestrates_failure_diagnostics_to_recording_view() -> None:
     statuses: list[str] = []
     state = ready_state()
     state.current_plan = sample_plan()
-    presenter = PlannerPresenter(service, state, view, statuses.append)
+    workspace = PlanningWorkspace.create()
+    coordinator = PlanningExecutionCoordinator(service)
+    presenter = PlannerPresenter(
+        service,
+        workspace,
+        coordinator,
+        state,
+        view,
+        statuses.append,
+    )
 
     presenter.on_generate_plan()
 
     require(state.current_plan is None, "Failure did not clear stale planner state")
-    require(len(view.errors) == 1, "Failure did not use the view error contract")
+    require(len(view.workspace_presentations) == 2, "Pending and failed states were not rendered")
+    require(len(view.errors) == 1, "Failure did not use the workspace error contract")
     require("cannot plan" in view.errors[0], "Failure message was not preserved")
-    require(len(view.diagnostic_batches) == 1, "Failure diagnostics were not delivered")
+    require(len(view.diagnostic_batches) == 2, "Failure diagnostics were not delivered")
     require(
-        view.diagnostic_batches[0] == adapt_planner_diagnostics(diagnostics),
+        view.diagnostic_batches[-1] == adapt_planner_diagnostics(diagnostics),
         "Failure adapter output changed",
     )
     require(
-        tuple(item.explanation for item in view.diagnostic_batches[0])
+        tuple(item.explanation for item in view.diagnostic_batches[-1])
         == tuple(item.canonical_explanation for item in diagnostics),
         "Failure path rewrote canonical explanations",
     )

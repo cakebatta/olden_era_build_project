@@ -1,5 +1,34 @@
 # Query Layer Design Specification
 
+## Planning Summary Support
+
+`PlanningQueryService.generate_planner_result(...)` returns the authoritative
+accepted planning result. In addition to the existing `plan` and `diagnostics`
+contracts, `PlannerResult` exposes:
+
+```text
+daily_construction_schedule: tuple[DailyConstructionCost, ...]
+```
+
+Each immutable entry contains the construction date, canonical `BuildingKey`,
+and individual `ResourceCost` for one accepted plan step. The projection is
+created from the accepted plan during normal result construction. It does not
+perform another graph traversal or planner execution and therefore shares the
+same result lifecycle.
+
+The Query Layer also exposes:
+
+```text
+get_building_display_text(building: BuildingKey) -> str
+```
+
+This operation resolves presentation text from canonical building identity.
+Desktop clients must use this operation rather than importing localization
+catalogs, localization parsers, or repository paths.
+
+Existing `generate_build_plan(...)`, `generate_planner_result(...)`, and
+`PlanningQueryService(loaded_data)` callers remain compatible.
+
 ## Purpose
 
 The Query Layer is the stable public interface to the backend. It answers planning and analysis questions by coordinating existing backend components while hiding implementation details.

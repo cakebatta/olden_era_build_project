@@ -7,7 +7,9 @@ from .database import LoadedGameData, load_default_game_data
 from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .income_timeline import calculate_income_timeline
+from .localization import LocalizationCatalog, parse_localization_file
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
+from .paths import require_english_cities_localization_file
 from .planner import (
     BuildPlan,
     GameDate,
@@ -45,11 +47,18 @@ class PlanningQueryService:
     """Stable public interface for deterministic building-planning queries."""
 
     _data: LoadedGameData
+    _localization: LocalizationCatalog | None = None
 
     @classmethod
     def from_default_game_data(cls) -> "PlanningQueryService":
         """Create a ready-to-use service from the canonical game data."""
-        return cls(load_default_game_data())
+        return cls(
+            load_default_game_data(),
+            parse_localization_file(
+                require_english_cities_localization_file(),
+                language="english",
+            ),
+        )
 
     def list_factions(self) -> tuple[str, ...]:
         return tuple(sorted(self._data.cities.cities))
@@ -78,6 +87,28 @@ class PlanningQueryService:
             raise UnknownBuildingError(
                 f"Unknown building: faction={faction!r}, sid={sid!r}, level={level}"
             ) from exc
+
+    def get_building_display_text(self, building: BuildingKey) -> str:
+        """
+        Return localized display text for one canonical building identity.
+
+        Localization remains a Query Layer responsibility. Application clients
+        must not read localization catalogs or repository paths directly.
+        """
+        if not isinstance(building, BuildingKey):
+            raise TypeError("building must be a BuildingKey")
+        definition = self.get_building(
+            building.faction,
+            building.sid,
+            building.level,
+        )
+        if self._localization is None:
+            raise QueryError("localization is not configured for this query service")
+        fallback = definition.name_key or building.sid
+        return self._localization.resolve(
+            definition.name_key,
+            fallback=fallback,
+        ) or fallback
 
     def get_prerequisites(
         self,

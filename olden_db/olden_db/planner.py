@@ -137,11 +137,29 @@ class BuildPlan:
 
 
 @dataclass(frozen=True, slots=True)
+class DailyConstructionCost:
+    """Immutable construction-cost projection for one dated plan action."""
+
+    date: GameDate
+    building: BuildingKey
+    cost: ResourceCost
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.date, GameDate):
+            raise TypeError("date must be a GameDate")
+        if not isinstance(self.building, BuildingKey):
+            raise TypeError("building must be a BuildingKey")
+        if not isinstance(self.cost, ResourceCost):
+            raise TypeError("cost must be a ResourceCost")
+
+
+@dataclass(frozen=True, slots=True)
 class PlannerResult:
     """Successful planner result with canonical structured diagnostics."""
 
     plan: BuildPlan
     diagnostics: tuple[PlannerDiagnostic, ...] = ()
+    daily_construction_schedule: tuple[DailyConstructionCost, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.plan, BuildPlan):
@@ -150,6 +168,34 @@ class PlannerResult:
         if any(not isinstance(item, PlannerDiagnostic) for item in normalized):
             raise TypeError("diagnostics must contain PlannerDiagnostic values")
         object.__setattr__(self, "diagnostics", normalized)
+
+        schedule = tuple(self.daily_construction_schedule)
+        if not schedule:
+            schedule = tuple(
+                DailyConstructionCost(
+                    date=step.date,
+                    building=step.building,
+                    cost=step.individual_cost,
+                )
+                for step in self.plan.steps
+            )
+        if any(not isinstance(item, DailyConstructionCost) for item in schedule):
+            raise TypeError(
+                "daily_construction_schedule must contain DailyConstructionCost values"
+            )
+        expected = tuple(
+            (step.date, step.building, step.individual_cost)
+            for step in self.plan.steps
+        )
+        actual = tuple(
+            (item.date, item.building, item.cost)
+            for item in schedule
+        )
+        if actual != expected:
+            raise ValueError(
+                "daily_construction_schedule must project the accepted plan steps"
+            )
+        object.__setattr__(self, "daily_construction_schedule", schedule)
 
 
 def _diagnostic(
