@@ -312,7 +312,7 @@ def run_desktop_application() -> None:
     root.withdraw()
     try:
         canonical_data = load_default_game_data()
-        service = PlanningQueryService(canonical_data)
+        service = PlanningQueryService.from_default_game_data()
     except (FileNotFoundError, OSError, ValueError) as exc:
         messagebox.showerror(
             APPLICATION_TITLE,

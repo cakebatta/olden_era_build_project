@@ -49,6 +49,11 @@ class PlannerView(ttk.Frame):
         self._workspace_detail_var = tk.StringVar(
             value="Choose one canonical target to plan automatically."
         )
+        self._summary_result_status_var = tk.StringVar(value="No accepted plan")
+        self._summary_selection_var = tk.StringVar(value="Missing: faction, target building, target level.")
+        self._summary_metrics_var = tk.StringVar(value="No planning values available.")
+        self._summary_diagnostics_var = tk.StringVar(value="No diagnostics requiring attention.")
+        self._summary_failure_var = tk.StringVar(value="")
         self._mode_var = tk.StringVar(value=format_planning_mode(0))
         self._scenario_vars: dict[BuildingKey, tk.BooleanVar] = {}
         self._diagnostic_inspector_expanded = False
@@ -193,6 +198,15 @@ class PlannerView(ttk.Frame):
             justify="left",
             wraplength=720,
         ).grid(row=1, column=0, sticky="ew", pady=(3, 0))
+        ttk.Separator(workspace_status).grid(row=2, column=0, sticky="ew", pady=8)
+        ttk.Label(workspace_status, text="Persistent Planning Summary", font=("TkDefaultFont", 11, "bold")).grid(row=3, column=0, sticky="w")
+        ttk.Label(workspace_status, textvariable=self._summary_result_status_var, font=("TkDefaultFont", 10, "bold")).grid(row=4, column=0, sticky="w", pady=(5, 0))
+        ttk.Label(workspace_status, textvariable=self._summary_selection_var, justify="left", wraplength=720).grid(row=5, column=0, sticky="ew", pady=(4, 0))
+        ttk.Label(workspace_status, textvariable=self._summary_metrics_var, justify="left", wraplength=720).grid(row=6, column=0, sticky="ew", pady=(4, 0))
+        ttk.Label(workspace_status, textvariable=self._summary_diagnostics_var, justify="left", wraplength=720).grid(row=7, column=0, sticky="ew", pady=(4, 0))
+        self._summary_failure_label = ttk.Label(workspace_status, textvariable=self._summary_failure_var, justify="left", wraplength=720, style="Diagnostic.Error.TLabel")
+        self._summary_failure_label.grid(row=8, column=0, sticky="ew", pady=(4, 0))
+        self._summary_failure_label.grid_remove()
 
         self._results_text = tk.Text(
             results,
@@ -419,40 +433,47 @@ class PlannerView(ttk.Frame):
     ) -> None:
         self._workspace_status_var.set(presentation.status_heading)
         self._workspace_detail_var.set(presentation.status_detail)
+        summary = presentation.summary
+        self._summary_result_status_var.set(summary.result_status)
+        selection_lines = []
+        if summary.faction_text:
+            selection_lines.append(f"Faction: {summary.faction_text}")
+        if summary.target_text:
+            selection_lines.append(f"Selected target: {summary.target_text}")
+        if summary.starting_date_text:
+            selection_lines.append(f"Starting date: {summary.starting_date_text}")
+        if summary.missing_inputs_text:
+            selection_lines.append(summary.missing_inputs_text)
+        self._summary_selection_var.set("\n".join(selection_lines) or "No semantic selection.")
+        metric_lines = []
+        if summary.displayed_result_target_text:
+            metric_lines.append(f"Displayed plan target: {summary.displayed_result_target_text}")
+        if summary.step_count_text:
+            metric_lines.append(f"Construction: {summary.step_count_text}")
+        if summary.completion_date_text:
+            metric_lines.append(f"Completion: {summary.completion_date_text}")
+        if summary.total_cost_text:
+            metric_lines.append(f"Total cost: {summary.total_cost_text}")
+        if summary.daily_schedule_rows:
+            metric_lines.append("Daily construction schedule:")
+            metric_lines.extend(
+                f"  {row.date_text} — {row.building_text} — {row.cost_text}"
+                for row in summary.daily_schedule_rows
+            )
+        self._summary_metrics_var.set("\n".join(metric_lines) or "No planning values available.")
+        self._summary_diagnostics_var.set(summary.diagnostic_summary)
+        if summary.failure_message:
+            self._summary_failure_var.set(f"Current failure: {summary.failure_message}")
+            self._summary_failure_label.grid()
+        else:
+            self._summary_failure_var.set("")
+            self._summary_failure_label.grid_remove()
         self._replace_results()
-        self._append_section(
-            "Planning Selection",
-            presentation.selection_summary,
-        )
-        if presentation.failure_message is not None:
-            self._append_section(
-                "Current Request Failed",
-                presentation.failure_message,
-            )
-        if presentation.accepted_plan is not None:
-            heading = (
-                "Previous Accepted Plan"
-                if presentation.retained_previous_result
-                else "Current Accepted Plan"
-            )
-            self._append_section(
-                heading,
-                format_build_plan(presentation.accepted_plan),
-            )
-            self._append_section(
-                "Total Cost",
-                format_resource_cost(
-                    presentation.accepted_plan.total_cost
-                ),
-            )
-        elif presentation.is_pending:
-            self._append_text(
-                "Planning is in progress for the current selection."
-            )
-        elif presentation.failure_message is None:
-            self._append_text(
-                "Complete the semantic selection to begin automatic planning."
-            )
+        self._append_section(summary.result_status, presentation.selection_summary)
+        if summary.displayed_result_target_text:
+            self._append_section("Displayed Plan Target", summary.displayed_result_target_text)
+        if summary.failure_message:
+            self._append_section("Current Request Failed", summary.failure_message)
         self.set_diagnostics(presentation.diagnostics)
         self._results_text.see("1.0")
         if presentation.is_pending:

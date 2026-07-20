@@ -81,3 +81,17 @@ def format_planning_mode(override_count: int) -> str:
     if override_count == 0:
         return "Planning mode: Canonical"
     return f"Planning mode: Custom Starting State\nOverrides: {override_count}"
+
+
+def format_step_count(count: int) -> str:
+    noun = "construction step" if count == 1 else "construction steps"
+    return f"{count} {noun}"
+
+
+def format_diagnostic_summary(diagnostics: tuple[object, ...]) -> str:
+    if not diagnostics:
+        return "No diagnostics requiring attention."
+    count = len(diagnostics)
+    noun = "diagnostic" if count == 1 else "diagnostics"
+    titles = tuple(str(getattr(item, "title", "Planner diagnostic")) for item in diagnostics)
+    return f"{count} {noun}: " + "; ".join(titles)

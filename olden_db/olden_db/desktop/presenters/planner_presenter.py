@@ -22,8 +22,18 @@ from olden_db.scenario import (
     StartingBuildingOverride,
 )
 
-from ..formatting import format_faction_status
+from ..formatting import (
+    format_diagnostic_summary,
+    format_faction_status,
+    format_game_date,
+    format_resource_cost,
+    format_step_count,
+)
 from ..planner_diagnostics import adapt_planner_diagnostics
+from ..planning_summary import (
+    DailyScheduleRowPresentation,
+    PlanningSummaryPresentation,
+)
 from ..state import PlannerState
 from ..workspace_presentation import PlanningWorkspacePresentation
 
@@ -79,6 +89,10 @@ class PlannerPresenter:
         self._view = view
         self._set_status = set_status
         self._on_context_changed = on_context_changed or (lambda: None)
+        self._last_workspace_presentation: (
+            PlanningWorkspacePresentation | None
+        ) = None
+        self._display_text_cache: dict[BuildingKey, str] = {}
 
     def initialize(self) -> None:
         self._view.set_event_handlers(
@@ -288,38 +302,43 @@ class PlannerPresenter:
     def _render_snapshot(self, snapshot: PlanningWorkspaceSnapshot) -> None:
         base = snapshot.base(DEFAULT_BASE_PLAN_ID)
         result = base.accepted_result
-        plan = result.plan if result is not None else None
-        if (
-            base.execution_status is PlanningExecutionStatus.FAILED
-            and base.latest_failure is not None
-        ):
-            diagnostics = adapt_planner_diagnostics(base.latest_failure.diagnostics)
-        elif result is not None:
-            diagnostics = adapt_planner_diagnostics(result.diagnostics)
-        else:
-            diagnostics = ()
-        if base.selection is None:
-            selection_summary = "Complete faction, target, level, date, and scenario."
-        else:
-            selection_summary = (
-                f"{base.selection.faction} / {base.selection.target.sid} "
-                f"level {base.selection.target.level} / "
-                f"starts {base.selection.starting_date}"
-            )
+        diagnostics = self._diagnostics_for(base)
         failure_message = (
             base.latest_failure.message
             if base.latest_failure is not None
             else None
         )
+        selection = base.selection
+        faction_text = selection.faction if selection is not None else self._state.selected_faction
+        target_text = self._display_text(selection.target) if selection is not None else None
+        starting_date_text = (
+            format_game_date(selection.starting_date)
+            if selection is not None
+            else format_game_date(self._state.starting_date)
+        )
+        missing_inputs = self._missing_input_text()
+        selection_summary = (
+            missing_inputs
+            if selection is None
+            else f"{selection.faction} / {target_text} / starts {starting_date_text}"
+        )
+        retained = base.retains_previous_result
+        summary = self._build_summary(
+            base=base,
+            result=result,
+            diagnostics=diagnostics,
+            faction_text=faction_text,
+            target_text=target_text,
+            starting_date_text=starting_date_text,
+            failure_message=failure_message,
+            missing_inputs=missing_inputs,
+        )
         if base.execution_status is PlanningExecutionStatus.PENDING:
             heading = "Planning in progress"
             detail = (
-                "The current semantic selection is being evaluated."
-                if not base.retains_previous_result
-                else (
-                    "The current semantic selection is being evaluated. "
-                    "The displayed plan is the previous accepted result."
-                )
+                "Evaluating the current selection."
+                if not retained
+                else "Evaluating the current selection while retaining the Previous Accepted Plan."
             )
         elif base.execution_status is PlanningExecutionStatus.READY:
             heading = "Current plan ready"
@@ -328,48 +347,126 @@ class PlannerPresenter:
             heading = "Current request failed"
             detail = (
                 "The current selection could not be planned."
-                if not base.retains_previous_result
-                else (
-                    "The current selection could not be planned. "
-                    "The displayed plan is the previous accepted result."
-                )
+                if not retained
+                else "The current selection failed. The displayed summary is the Previous Accepted Plan."
             )
         else:
             heading = "Planning selection incomplete"
-            detail = (
-                "Choose one canonical target to plan automatically."
-                if not base.retains_previous_result
-                else (
-                    "Choose one canonical target to plan automatically. "
-                    "The displayed plan is the previous accepted result."
-                )
-            )
+            detail = missing_inputs
         presentation = PlanningWorkspacePresentation(
             execution_status=base.execution_status,
             status_heading=heading,
             status_detail=detail,
             selection_summary=selection_summary,
-            accepted_plan=plan,
-            retained_previous_result=base.retains_previous_result,
+            summary=summary,
             failure_message=failure_message,
             diagnostics=diagnostics,
             selection_revision=base.selection_revision,
             result_revision=base.result_revision,
         )
-        if base.result_is_current and plan is not None:
-            self._state.store_workspace_result(plan)
+        if base.result_is_current and result is not None:
+            self._state.store_workspace_result(result.plan)
         else:
             self._state.clear_results()
-        self._view.render_workspace(presentation)
+        if presentation != self._last_workspace_presentation:
+            self._view.render_workspace(presentation)
+            self._last_workspace_presentation = presentation
         if base.execution_status is PlanningExecutionStatus.READY:
-            self._set_status(
-                f"Planning revision {base.selection_revision} completed."
-            )
+            self._set_status(f"Planning revision {base.selection_revision} completed.")
         elif base.execution_status is PlanningExecutionStatus.FAILED:
             self._set_status(
                 "Current planning request failed"
                 + (f": {failure_message}" if failure_message else ".")
             )
+
+    def _diagnostics_for(self, base):
+        result = base.accepted_result
+        if (
+            base.execution_status is PlanningExecutionStatus.FAILED
+            and base.latest_failure is not None
+        ):
+            return adapt_planner_diagnostics(base.latest_failure.diagnostics)
+        if result is not None:
+            return adapt_planner_diagnostics(result.diagnostics)
+        return ()
+
+    def _display_text(self, key: BuildingKey) -> str:
+        cached = self._display_text_cache.get(key)
+        if cached is not None:
+            return cached
+        text = self._service.get_building_display_text(key)
+        self._display_text_cache[key] = text
+        return text
+
+    def _missing_input_text(self) -> str:
+        missing: list[str] = []
+        if self._state.selected_faction is None:
+            missing.append("faction")
+        if self._state.selected_building_sid is None:
+            missing.append("target building")
+        if self._state.selected_level is None:
+            missing.append("target level")
+        return "Planning selection is complete." if not missing else "Missing: " + ", ".join(missing) + "."
+
+    def _build_summary(
+        self,
+        *,
+        base,
+        result,
+        diagnostics,
+        faction_text,
+        target_text,
+        starting_date_text,
+        failure_message,
+        missing_inputs,
+    ) -> PlanningSummaryPresentation:
+        retained = base.retains_previous_result
+        if result is None:
+            return PlanningSummaryPresentation(
+                lifecycle_status=base.execution_status.value,
+                result_status=(
+                    "Planning in progress"
+                    if base.execution_status is PlanningExecutionStatus.PENDING
+                    else "No accepted plan"
+                ),
+                faction_text=faction_text,
+                target_text=target_text,
+                starting_date_text=starting_date_text,
+                displayed_result_target_text=None,
+                step_count_text=None,
+                completion_date_text=None,
+                total_cost_text=None,
+                daily_schedule_rows=(),
+                diagnostic_summary=format_diagnostic_summary(diagnostics),
+                failure_message=failure_message,
+                missing_inputs_text=missing_inputs,
+                is_retained_previous_result=False,
+            )
+        plan = result.plan
+        rows = tuple(
+            DailyScheduleRowPresentation(
+                date_text=format_game_date(item.date),
+                building_text=self._display_text(item.building),
+                cost_text=format_resource_cost(item.cost),
+            )
+            for item in result.daily_construction_schedule
+        )
+        return PlanningSummaryPresentation(
+            lifecycle_status=base.execution_status.value,
+            result_status=("Previous Accepted Plan" if retained else "Current Accepted Plan"),
+            faction_text=faction_text,
+            target_text=target_text,
+            starting_date_text=starting_date_text,
+            displayed_result_target_text=self._display_text(plan.target),
+            step_count_text=format_step_count(plan.build_actions),
+            completion_date_text=format_game_date(plan.completion_date),
+            total_cost_text=format_resource_cost(plan.total_cost),
+            daily_schedule_rows=rows,
+            diagnostic_summary=format_diagnostic_summary(diagnostics),
+            failure_message=failure_message,
+            missing_inputs_text=(missing_inputs if base.execution_status is PlanningExecutionStatus.EMPTY else None),
+            is_retained_previous_result=retained,
+        )
 
     def _load_candidates(
         self,

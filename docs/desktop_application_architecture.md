@@ -140,6 +140,18 @@ The desktop renders immutable workspace snapshots as incomplete, pending,
 ready, failed, or retained-previous-result presentation. A retained result is
 never labeled current. The legacy Generate control is hidden and disabled.
 
+## Sprint 14 Persistent Planning Summary
+
+The planner presenter maps immutable Planning Workspace snapshots into an
+immutable `PlanningSummaryPresentation`. Values come only from the accepted
+`PlannerResult`, BE-011 `daily_construction_schedule`, the Query Layer
+localization operation, and existing diagnostic adapters.
+
+The presenter caches localized text and suppresses view updates when the full
+immutable presentation is unchanged. The view renders labels and grouping only;
+it does not derive schedules, dates, costs, diagnostics, or localization. A
+retained result is always labeled `Previous Accepted Plan`.
+
 ## Planning Workspace Ownership
 
 ```text

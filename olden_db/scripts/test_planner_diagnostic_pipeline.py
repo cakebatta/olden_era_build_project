@@ -424,6 +424,10 @@ class RecordingView:
 
 
 class RecordingService:
+    def get_building_display_text(self, building):
+        return f"{building.sid} level {building.level}"
+
+
     def __init__(
         self,
         building: BuildingLevel,
@@ -509,9 +513,14 @@ def test_presenter_orchestrates_success_diagnostics_to_recording_view() -> None:
     require(service.generate_calls == 1, "Presenter did not use planner-result query")
     require(state.current_plan is result.plan, "Presenter did not store canonical plan")
     require(len(view.workspace_presentations) == 2, "Pending and ready states were not rendered")
+    summary = view.workspace_presentations[-1].summary
     require(
-        view.workspace_presentations[-1].accepted_plan is result.plan,
-        "Accepted plan was not rendered through workspace presentation",
+        summary.result_status == "Current Accepted Plan",
+        "Presenter did not identify the accepted result as current",
+    )
+    require(
+        summary.step_count_text is not None,
+        "Presenter did not deliver accepted-plan summary values",
     )
     require(not view.errors, "Successful planning displayed an error")
     require(len(view.diagnostic_batches) == 2, "Workspace diagnostics were not delivered")
