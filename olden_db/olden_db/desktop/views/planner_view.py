@@ -19,6 +19,7 @@ from ..planner_diagnostics import (
     DiagnosticSeverity,
     PlannerDiagnosticPresentation,
 )
+from ..planning_timeline import BuildPlanTimelinePresentation
 from ..workspace_presentation import PlanningWorkspacePresentation
 
 
@@ -54,6 +55,10 @@ class PlannerView(ttk.Frame):
         self._summary_metrics_var = tk.StringVar(value="No planning values available.")
         self._summary_diagnostics_var = tk.StringVar(value="No diagnostics requiring attention.")
         self._summary_failure_var = tk.StringVar(value="")
+        self._timeline_status_var = tk.StringVar(value="No accepted plan")
+        self._timeline_empty_var = tk.StringVar(value="Complete the planning selection to view the build timeline.")
+        self._timeline_detail_var = tk.StringVar(value="")
+        self._last_timeline_presentation: BuildPlanTimelinePresentation | None = None
         self._mode_var = tk.StringVar(value=format_planning_mode(0))
         self._scenario_vars: dict[BuildingKey, tk.BooleanVar] = {}
         self._diagnostic_inspector_expanded = False
@@ -208,19 +213,70 @@ class PlannerView(ttk.Frame):
         self._summary_failure_label.grid(row=8, column=0, sticky="ew", pady=(4, 0))
         self._summary_failure_label.grid_remove()
 
-        self._results_text = tk.Text(
+        timeline = ttk.LabelFrame(
             results,
-            wrap="word",
-            state="disabled",
-            padx=12,
-            pady=12,
-            borderwidth=0,
-            highlightthickness=0,
+            text="Interactive Build Plan Timeline",
+            padding=(10, 8),
         )
-        results_scrollbar = ttk.Scrollbar(results, orient="vertical", command=self._results_text.yview)
-        self._results_text.configure(yscrollcommand=results_scrollbar.set)
-        self._results_text.grid(row=1, column=0, sticky="nsew")
-        results_scrollbar.grid(row=1, column=1, sticky="ns")
+        timeline.grid(row=1, column=0, columnspan=2, sticky="nsew")
+        timeline.columnconfigure(0, weight=1)
+        timeline.rowconfigure(2, weight=1)
+
+        ttk.Label(
+            timeline,
+            textvariable=self._timeline_status_var,
+            font=("TkDefaultFont", 10, "bold"),
+        ).grid(row=0, column=0, sticky="w")
+        self._timeline_empty_label = ttk.Label(
+            timeline,
+            textvariable=self._timeline_empty_var,
+            justify="left",
+            wraplength=720,
+        )
+        self._timeline_empty_label.grid(row=1, column=0, sticky="ew", pady=(5, 7))
+
+        columns = ("position", "building", "level", "date", "cost", "cumulative")
+        self._timeline_tree = ttk.Treeview(
+            timeline,
+            columns=columns,
+            show="headings",
+            selectmode="browse",
+            height=9,
+        )
+        headings = (
+            ("position", "Position", 92),
+            ("building", "Building", 180),
+            ("level", "Level", 70),
+            ("date", "Construction date", 210),
+            ("cost", "Individual cost", 160),
+            ("cumulative", "Cumulative cost", 170),
+        )
+        for column, heading, width in headings:
+            self._timeline_tree.heading(column, text=heading)
+            self._timeline_tree.column(
+                column,
+                width=width,
+                minwidth=60,
+                stretch=column in {"building", "date", "cost", "cumulative"},
+                anchor="w",
+            )
+        timeline_scrollbar = ttk.Scrollbar(
+            timeline,
+            orient="vertical",
+            command=self._timeline_tree.yview,
+        )
+        self._timeline_tree.configure(yscrollcommand=timeline_scrollbar.set)
+        self._timeline_tree.grid(row=2, column=0, sticky="nsew")
+        timeline_scrollbar.grid(row=2, column=1, sticky="ns")
+        self._timeline_tree.bind("<<TreeviewSelect>>", self._handle_timeline_selection)
+        ttk.Label(
+            timeline,
+            textvariable=self._timeline_detail_var,
+            justify="left",
+            wraplength=720,
+        ).grid(row=3, column=0, columnspan=2, sticky="ew", pady=(7, 0))
+
+        self._results_text = tk.Text(results, state="disabled", height=1)
         self._results_text.tag_configure(
             "section", font=("TkDefaultFont", 11, "bold"), spacing1=12, spacing3=6
         )
@@ -468,16 +524,75 @@ class PlannerView(ttk.Frame):
         else:
             self._summary_failure_var.set("")
             self._summary_failure_label.grid_remove()
-        self._replace_results()
-        self._append_section(summary.result_status, presentation.selection_summary)
-        if summary.displayed_result_target_text:
-            self._append_section("Displayed Plan Target", summary.displayed_result_target_text)
-        if summary.failure_message:
-            self._append_section("Current Request Failed", summary.failure_message)
+        self._render_timeline(presentation.timeline)
         self.set_diagnostics(presentation.diagnostics)
-        self._results_text.see("1.0")
         if presentation.is_pending:
             self.update_idletasks()
+
+    def _render_timeline(
+        self,
+        timeline: BuildPlanTimelinePresentation,
+    ) -> None:
+        if timeline == self._last_timeline_presentation:
+            return
+        self._timeline_status_var.set(timeline.result_status)
+        self._timeline_empty_var.set(timeline.empty_state_text or "")
+        if timeline.empty_state_text:
+            self._timeline_empty_label.grid()
+        else:
+            self._timeline_empty_label.grid_remove()
+        for item in self._timeline_tree.get_children():
+            self._timeline_tree.delete(item)
+        for step in timeline.steps:
+            self._timeline_tree.insert(
+                "",
+                "end",
+                iid=str(step.step_number),
+                values=(
+                    step.position_text,
+                    step.building_name,
+                    step.level_text,
+                    step.construction_date_text,
+                    step.individual_cost_text,
+                    step.cumulative_cost_text,
+                ),
+                tags=("retained",) if timeline.is_retained_previous_result else (),
+            )
+        self._timeline_tree.tag_configure("retained", foreground="#6B6254")
+        self._timeline_detail_var.set(
+            timeline.empty_state_text
+            or "Select a construction step to review its completion order."
+        )
+        if timeline.steps:
+            first = str(timeline.steps[0].step_number)
+            self._timeline_tree.selection_set(first)
+            self._timeline_tree.focus(first)
+            self._timeline_tree.see(first)
+            self._show_timeline_step_detail(timeline.steps[0])
+        self._last_timeline_presentation = timeline
+
+    def _handle_timeline_selection(
+        self,
+        _event: tk.Event[tk.Misc] | None = None,
+    ) -> None:
+        selection = self._timeline_tree.selection()
+        timeline = self._last_timeline_presentation
+        if not selection or timeline is None:
+            return
+        step_number = int(selection[0])
+        step = next(
+            (item for item in timeline.steps if item.step_number == step_number),
+            None,
+        )
+        if step is not None:
+            self._show_timeline_step_detail(step)
+
+    def _show_timeline_step_detail(self, step) -> None:
+        self._timeline_detail_var.set(
+            f"{step.position_text} — {step.completion_order_text} — "
+            f"{step.building_name} {step.level_text} — "
+            f"builds {step.construction_date_text}."
+        )
 
     def set_diagnostics(
         self,

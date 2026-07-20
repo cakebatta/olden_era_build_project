@@ -1,0 +1,65 @@
+    def _render_timeline(
+        self,
+        timeline: BuildPlanTimelinePresentation,
+    ) -> None:
+        if timeline == self._last_timeline_presentation:
+            return
+        self._timeline_status_var.set(timeline.result_status)
+        self._timeline_empty_var.set(timeline.empty_state_text or "")
+        if timeline.empty_state_text:
+            self._timeline_empty_label.grid()
+        else:
+            self._timeline_empty_label.grid_remove()
+        for item in self._timeline_tree.get_children():
+            self._timeline_tree.delete(item)
+        for step in timeline.steps:
+            self._timeline_tree.insert(
+                "",
+                "end",
+                iid=str(step.step_number),
+                values=(
+                    step.position_text,
+                    step.building_name,
+                    step.level_text,
+                    step.construction_date_text,
+                    step.individual_cost_text,
+                    step.cumulative_cost_text,
+                ),
+                tags=("retained",) if timeline.is_retained_previous_result else (),
+            )
+        self._timeline_tree.tag_configure("retained", foreground="#6B6254")
+        self._timeline_detail_var.set(
+            timeline.empty_state_text
+            or "Select a construction step to review its completion order."
+        )
+        if timeline.steps:
+            first = str(timeline.steps[0].step_number)
+            self._timeline_tree.selection_set(first)
+            self._timeline_tree.focus(first)
+            self._timeline_tree.see(first)
+            self._show_timeline_step_detail(timeline.steps[0])
+        self._last_timeline_presentation = timeline
+
+    def _handle_timeline_selection(
+        self,
+        _event: tk.Event[tk.Misc] | None = None,
+    ) -> None:
+        selection = self._timeline_tree.selection()
+        timeline = self._last_timeline_presentation
+        if not selection or timeline is None:
+            return
+        step_number = int(selection[0])
+        step = next(
+            (item for item in timeline.steps if item.step_number == step_number),
+            None,
+        )
+        if step is not None:
+            self._show_timeline_step_detail(step)
+
+    def _show_timeline_step_detail(self, step) -> None:
+        self._timeline_detail_var.set(
+            f"{step.position_text} — {step.completion_order_text} — "
+            f"{step.building_name} {step.level_text} — "
+            f"builds {step.construction_date_text}."
+        )
+

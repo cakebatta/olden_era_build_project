@@ -34,6 +34,7 @@ from ..planning_summary import (
     DailyScheduleRowPresentation,
     PlanningSummaryPresentation,
 )
+from ..planning_timeline import BuildPlanTimelinePresentation, TimelineStepPresentation
 from ..state import PlannerState
 from ..workspace_presentation import PlanningWorkspacePresentation
 
@@ -363,6 +364,7 @@ class PlannerPresenter:
             diagnostics=diagnostics,
             selection_revision=base.selection_revision,
             result_revision=base.result_revision,
+            timeline=self._build_timeline(base=base, result=result),
         )
         if base.result_is_current and result is not None:
             self._state.store_workspace_result(result.plan)
@@ -467,6 +469,66 @@ class PlannerPresenter:
             missing_inputs_text=(missing_inputs if base.execution_status is PlanningExecutionStatus.EMPTY else None),
             is_retained_previous_result=retained,
         )
+
+    def _build_timeline(
+        self,
+        *,
+        base,
+        result,
+    ) -> BuildPlanTimelinePresentation:
+        retained = base.retains_previous_result
+        if result is None:
+            return BuildPlanTimelinePresentation(
+                result_status="No accepted plan",
+                empty_state_text=self._timeline_empty_state(base),
+                steps=(),
+                is_retained_previous_result=False,
+            )
+        total_steps = len(result.plan.steps)
+        steps = tuple(
+            TimelineStepPresentation(
+                step_number=step.step_number,
+                position_text=f"Step {step.step_number} of {total_steps}",
+                building_name=self._display_text(step.building),
+                level_text=f"Level {step.building.level}",
+                construction_date_text=format_game_date(step.date),
+                individual_cost_text=format_resource_cost(step.individual_cost),
+                cumulative_cost_text=format_resource_cost(step.cumulative_cost),
+                completion_order_text=(
+                    "Completes first"
+                    if step.step_number == 1
+                    else f"Completes {step.step_number}{self._ordinal_suffix(step.step_number)}"
+                ),
+            )
+            for step in result.plan.steps
+        )
+        return BuildPlanTimelinePresentation(
+            result_status=(
+                "Previous Accepted Plan" if retained else "Current Accepted Plan"
+            ),
+            empty_state_text=(
+                "No construction actions are required because the target is "
+                "available at the active scenario start."
+                if not steps
+                else None
+            ),
+            steps=steps,
+            is_retained_previous_result=retained,
+        )
+
+    @staticmethod
+    def _timeline_empty_state(base) -> str:
+        if base.execution_status is PlanningExecutionStatus.PENDING:
+            return "Planning is in progress. No accepted timeline is available yet."
+        if base.execution_status is PlanningExecutionStatus.FAILED:
+            return "The current request failed before a plan was accepted."
+        return "Complete the planning selection to view the build timeline."
+
+    @staticmethod
+    def _ordinal_suffix(number: int) -> str:
+        if 10 <= number % 100 <= 20:
+            return "th"
+        return {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
 
     def _load_candidates(
         self,

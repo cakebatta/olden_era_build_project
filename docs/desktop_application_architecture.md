@@ -320,3 +320,7 @@ The current architecture does not approve:
 ## Success Criteria
 
 This architecture succeeds when the application can replan automatically from semantic selection changes, stale results cannot become current, the planner remains deterministic and UI-independent, the Query Layer remains authoritative, and the workspace can scale from one base to multiple bases without replacing the core model.
+
+## Interactive Build Plan Timeline (UI-008)
+
+The presenter projects accepted `BuildPlan.steps` into immutable timeline presentation values. The passive view renders a focusable chronological Treeview and independently suppresses equivalent timeline rebuilds. Retained timelines are explicitly labeled as previous.

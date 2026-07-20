@@ -6,6 +6,7 @@ from olden_db.planning_workspace import PlanningExecutionStatus
 
 from .planner_diagnostics import PlannerDiagnosticPresentation
 from .planning_summary import PlanningSummaryPresentation
+from .planning_timeline import BuildPlanTimelinePresentation, EMPTY_BUILD_PLAN_TIMELINE
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,6 +22,7 @@ class PlanningWorkspacePresentation:
     diagnostics: tuple[PlannerDiagnosticPresentation, ...]
     selection_revision: int
     result_revision: int | None
+    timeline: BuildPlanTimelinePresentation = EMPTY_BUILD_PLAN_TIMELINE
 
     @property
     def is_pending(self) -> bool:
