@@ -158,6 +158,12 @@ The presenter caches localized text and suppresses view updates when the full im
 
 ## Sprint 15 Scenario Comparison Composition
 
+The BE-012 composition root constructs one `ScenarioComparisonCollection` and
+one `ScenarioComparisonExecutionCoordinator` around the existing
+application-scoped `PlanningQueryService`. Presenters resolve workspaces by
+`WorkspaceId` and do not construct their own backend services.
+
+
 ARCH-020 composes multiple complete Planning Workspace instances under one application-scoped `ScenarioComparisonCollection`.
 
 Each workspace has a stable opaque `WorkspaceId` and independently owns:

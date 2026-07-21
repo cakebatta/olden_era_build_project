@@ -690,6 +690,24 @@ This architecture does not approve:
 
 ## Decision Consequences
 
+## BE-012 Implementation Clarifications
+
+BE-012 keeps `PlanningWorkspace` unchanged and assigns `WorkspaceId` when the
+collection creates membership. Collection snapshots contain ordered collection
+metadata and each workspace's existing immutable snapshot.
+
+Identity-aware execution captures both `WorkspaceId` and the existing
+`PlanningExecutionRequest`. Acceptance resolves the current member by identity
+and then delegates revision and selection validation to that member's
+`PlanningWorkspace`.
+
+Workspace duplication applies only the source's current semantic
+`PlanningSelection` to a new workspace. It does not copy lifecycle state.
+
+One `ScenarioComparisonExecutionCoordinator` serves every workspace through the
+application-scoped `PlanningQueryService`.
+
+
 ### Benefits
 
 - multiple planning questions coexist without manual input replacement;
