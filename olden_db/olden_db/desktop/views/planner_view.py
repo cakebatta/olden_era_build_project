@@ -88,17 +88,17 @@ class PlannerView(ttk.Frame):
 
         ttk.Label(target, text="Faction").grid(row=0, column=0, sticky="w", padx=(0, 12), pady=5)
         self._faction_selector = ttk.Combobox(target, textvariable=self._faction_var, state="readonly")
-        self._faction_selector.grid(row=0, column=1, sticky="ew", pady=5)
+        self._faction_selector.grid(row=0, column=1, sticky="w", pady=5)
         self._faction_selector.bind("<<ComboboxSelected>>", self._handle_faction_event)
 
         ttk.Label(target, text="Building SID").grid(row=1, column=0, sticky="w", padx=(0, 12), pady=5)
         self._building_selector = ttk.Combobox(target, textvariable=self._building_var, state="disabled")
-        self._building_selector.grid(row=1, column=1, sticky="ew", pady=5)
+        self._building_selector.grid(row=1, column=1, sticky="w", pady=5)
         self._building_selector.bind("<<ComboboxSelected>>", self._handle_building_event)
 
         ttk.Label(target, text="Level").grid(row=2, column=0, sticky="w", padx=(0, 12), pady=5)
         self._level_selector = ttk.Combobox(target, textvariable=self._level_var, state="disabled")
-        self._level_selector.grid(row=2, column=1, sticky="ew", pady=5)
+        self._level_selector.grid(row=2, column=1, sticky="w", pady=5)
         self._level_selector.bind("<<ComboboxSelected>>", self._handle_level_event)
 
         ttk.Label(target, text="Starting Date").grid(
@@ -161,7 +161,14 @@ class PlannerView(ttk.Frame):
         shell.grid(row=1, column=0, sticky="ew", pady=(10, 0))
         shell.columnconfigure(0, weight=1)
         self._scenario_canvas = tk.Canvas(shell, height=180, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(shell, orient="vertical", command=self._scenario_canvas.yview)
+        scrollbar = tk.Scrollbar(
+            shell,
+            orient="vertical",
+            command=self._scenario_canvas.yview,
+            width=18,
+            borderwidth=1,
+            relief="raised",
+        )
         self._scenario_canvas.configure(yscrollcommand=scrollbar.set)
         self._scenario_canvas.grid(row=0, column=0, sticky="ew")
         scrollbar.grid(row=0, column=1, sticky="ns")
@@ -260,10 +267,13 @@ class PlannerView(ttk.Frame):
                 stretch=column in {"building", "date", "cost", "cumulative"},
                 anchor="w",
             )
-        timeline_scrollbar = ttk.Scrollbar(
+        timeline_scrollbar = tk.Scrollbar(
             timeline,
             orient="vertical",
             command=self._timeline_tree.yview,
+            width=18,
+            borderwidth=1,
+            relief="raised",
         )
         self._timeline_tree.configure(yscrollcommand=timeline_scrollbar.set)
         self._timeline_tree.grid(row=2, column=0, sticky="nsew")
@@ -316,10 +326,13 @@ class PlannerView(ttk.Frame):
             highlightbackground=canvas_background or "SystemButtonFace",
             background=canvas_background or "SystemButtonFace",
         )
-        self._diagnostic_scrollbar = ttk.Scrollbar(
+        self._diagnostic_scrollbar = tk.Scrollbar(
             self._diagnostic_panel,
             orient="vertical",
             command=self._diagnostic_canvas.yview,
+            width=18,
+            borderwidth=1,
+            relief="raised",
         )
         self._diagnostic_canvas.configure(
             yscrollcommand=self._set_diagnostic_scrollbar
@@ -381,18 +394,42 @@ class PlannerView(ttk.Frame):
         self._on_starting_building_changed = on_starting_building_changed
         self._on_reset_scenario = on_reset_scenario
 
+    @staticmethod
+    def _fit_combobox_to_values(
+        selector: ttk.Combobox,
+        values,
+        *,
+        minimum: int = 8,
+        maximum: int = 42,
+    ) -> None:
+        displayed = tuple(str(value) for value in values)
+        longest = max((len(value) for value in displayed), default=minimum)
+        selector.configure(width=max(minimum, min(maximum, longest + 2)))
+
     def set_factions(self, factions: tuple[str, ...]) -> None:
         self._faction_selector.configure(values=factions)
+        self._fit_combobox_to_values(self._faction_selector, factions)
 
     def set_buildings(self, buildings: tuple[str, ...]) -> None:
         self._building_var.set("")
-        self._building_selector.configure(values=buildings, state="readonly" if buildings else "disabled")
+        self._building_selector.configure(
+            values=buildings,
+            state="readonly" if buildings else "disabled",
+        )
+        self._fit_combobox_to_values(self._building_selector, buildings)
 
     def set_levels(self, levels: tuple[int, ...]) -> None:
         self._level_var.set("")
+        displayed_levels = tuple(str(level) for level in levels)
         self._level_selector.configure(
-            values=tuple(str(level) for level in levels),
+            values=displayed_levels,
             state="readonly" if levels else "disabled",
+        )
+        self._fit_combobox_to_values(
+            self._level_selector,
+            displayed_levels,
+            minimum=6,
+            maximum=12,
         )
 
     def clear_building_selection(self) -> None:

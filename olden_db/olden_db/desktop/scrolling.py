@@ -41,10 +41,13 @@ class ScrollableWorkspace(ttk.Frame):
             highlightthickness=0,
             borderwidth=0,
         )
-        self.scrollbar = ttk.Scrollbar(
+        self.scrollbar = tk.Scrollbar(
             self,
             orient="vertical",
             command=self.canvas.yview,
+            width=18,
+            borderwidth=1,
+            relief="raised",
         )
         self.canvas.configure(
             yscrollcommand=self.scrollbar.set
