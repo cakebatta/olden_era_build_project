@@ -488,3 +488,10 @@ Collection controls mutate backend membership, labels, and Left/Right
 presentation roles. Semantic duplication uses the backend collection operation
 and starts an independent lifecycle. Label and comparison-role changes never
 invoke planning.
+
+## BE-013 Comparison Boundary
+
+Desktop presenters request current accepted inputs from the Scenario Comparison
+collection and call `PlanningQueryService.compare_accepted_build_plans`.
+Presenters do not import alignment implementation, planner internals, graph
+algorithms, or mutable workspace state.

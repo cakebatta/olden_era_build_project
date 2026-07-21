@@ -725,3 +725,13 @@ application-scoped `PlanningQueryService`.
 - comparison readiness must distinguish current and retained results;
 - persistence requires additive versioning;
 - a future additive Query Layer comparison operation may be needed to avoid duplicate plan generation.
+
+## BE-013 Accepted-Plan Comparison
+
+Scenario Comparison exposes only current accepted workspace results to the
+certified Query Layer operation. Pending, failed-without-current-result,
+retained, stale, incomplete, and absent results are not eligible.
+
+The comparison operation receives immutable accepted results plus optional
+opaque workspace correlation. Workspace identity is returned unchanged and
+does not affect alignment or factual deltas.

@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 from uuid import uuid4
 
+from .comparison import AcceptedBuildPlanInput
 from .planner import PlannerError, PlannerResult
 from .planning_workspace import (
     DEFAULT_BASE_PLAN_ID,
@@ -277,6 +278,20 @@ class ScenarioComparisonCollection:
         self._validate_role_available(role, excluding=workspace_id)
         self._replace_member(replace(member, comparison_role=role))
         self._collection_revision += 1
+
+    def current_accepted_plan_input(
+        self,
+        workspace_id: WorkspaceId,
+        base_id: BasePlanId = DEFAULT_BASE_PLAN_ID,
+    ) -> AcceptedBuildPlanInput | None:
+        """Return only a current accepted result eligible for factual comparison."""
+        state = self.workspace(workspace_id).base(base_id)
+        if not state.result_is_current or state.accepted_result is None:
+            return None
+        return AcceptedBuildPlanInput(
+            accepted_result=state.accepted_result,
+            correlation_id=workspace_id.value,
+        )
 
     def capture_execution(
         self,

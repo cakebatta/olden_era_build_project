@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .comparison import PlanComparison, compare_build_plans
+from .comparison import (
+    AcceptedBuildPlanInput,
+    BuildPlanComparisonOutcome,
+    PlanComparison,
+    compare_accepted_build_plans,
+    compare_build_plans,
+)
 from .database import LoadedGameData, load_default_game_data
 from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
@@ -239,6 +245,14 @@ class PlanningQueryService:
             scenario=right_scenario,
         )
         return compare_build_plans(left_plan, right_plan)
+
+    def compare_accepted_build_plans(
+        self,
+        left: AcceptedBuildPlanInput | None,
+        right: AcceptedBuildPlanInput | None,
+    ) -> BuildPlanComparisonOutcome:
+        """Compare two already accepted planner results without regenerating plans."""
+        return compare_accepted_build_plans(left, right)
 
     def generate_decision_summary(
         self,
