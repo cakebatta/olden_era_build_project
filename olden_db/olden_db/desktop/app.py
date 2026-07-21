@@ -4,8 +4,10 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from olden_db.database import LoadedGameData, load_default_game_data
-from olden_db.planning_execution import PlanningExecutionCoordinator
-from olden_db.planning_workspace import PlanningWorkspace
+from olden_db.scenario_comparison import (
+    ScenarioComparisonCollection,
+    ScenarioComparisonExecutionCoordinator,
+)
 from olden_db.query import PlanningQueryService
 from olden_db.scenario_persistence import (
     LocalScenarioRepository,
@@ -16,6 +18,9 @@ from .app_paths import application_data_root
 from .comparison_state import ComparisonState
 from .economy_state import EconomyTimelineState
 from .presenters.comparison_presenter import ComparisonPresenter
+from .presenters.scenario_comparison_workspace_presenter import (
+    ScenarioComparisonWorkspacePresenter,
+)
 from .inline_validation_controller import InlineValidationScenarioController
 from .scenario_presenters import (
     ScenarioAwareEconomyPresenter,
@@ -25,7 +30,9 @@ from .scrolling import ScrollableWorkspace
 from .state import PlannerState
 from .views.comparison_view import ComparisonView
 from .views.economy_view import EconomyTimelineView
-from .views.planner_view import PlannerView
+from .views.scenario_comparison_workspace_view import (
+    ScenarioComparisonWorkspaceView,
+)
 from .views.scenario_manager_view import ScenarioManagerView
 
 
@@ -61,19 +68,32 @@ class DesktopApplication:
 
         (
             manager_view,
-            planner_view,
+            scenario_comparison_workspace_view,
             comparison_view,
             economy_view,
         ) = self._shell()
         self.scenario_manager_view = manager_view
 
-        planner_state = PlannerState()
         economy_state = EconomyTimelineState()
-        self.planning_workspace = PlanningWorkspace.create()
-        self.planning_execution_coordinator = PlanningExecutionCoordinator(
-            service
+        self.scenario_comparison_collection = (
+            ScenarioComparisonCollection.create()
+        )
+        self.scenario_comparison_execution_coordinator = (
+            ScenarioComparisonExecutionCoordinator(service)
         )
 
+        self.scenario_comparison_workspace_presenter = (
+            ScenarioComparisonWorkspacePresenter(
+                service,
+                self.scenario_comparison_collection,
+                self.scenario_comparison_execution_coordinator,
+                scenario_comparison_workspace_view,
+                self.set_status,
+            )
+        )
+        planner_state = (
+            self.scenario_comparison_workspace_presenter.primary_state
+        )
         self.economy_presenter = ScenarioAwareEconomyPresenter(
             service,
             planner_state,
@@ -81,16 +101,16 @@ class DesktopApplication:
             economy_view,
             self.set_status,
         )
-        self.planner_presenter = ScenarioAwarePlannerPresenter(
-            service,
-            self.planning_workspace,
-            self.planning_execution_coordinator,
-            planner_state,
-            planner_view,
-            self.set_status,
-            on_context_changed=(
-                self.economy_presenter.on_planning_context_changed
-            ),
+        self.scenario_comparison_workspace_presenter.set_primary_context_changed_handler(
+            self.economy_presenter.on_planning_context_changed
+        )
+        self.planner_presenter = (
+            self.scenario_comparison_workspace_presenter.primary_presenter
+        )
+        self.planning_workspace = (
+            self.scenario_comparison_collection.workspace(
+                self.scenario_comparison_workspace_presenter.primary_workspace_id
+            )
         )
         self.comparison_presenter = ComparisonPresenter(
             service,
@@ -125,7 +145,7 @@ class DesktopApplication:
             self.scenario_controller.on_user_edit
         )
 
-        self.planner_presenter.initialize()
+        self.scenario_comparison_workspace_presenter.initialize()
         self.comparison_presenter.initialize()
         self.economy_presenter.initialize()
         self.scenario_controller.initialize()
@@ -161,7 +181,7 @@ class DesktopApplication:
         self,
     ) -> tuple[
         ScenarioManagerView,
-        PlannerView,
+        ScenarioComparisonWorkspaceView,
         ComparisonView,
         EconomyTimelineView,
     ]:
@@ -216,7 +236,7 @@ class DesktopApplication:
 
         ttk.Button(
             navigation,
-            text="Build Planner",
+            text="Scenario Comparison",
             command=lambda: self.show("planner"),
         ).grid(row=1, column=0, sticky="ew")
 
@@ -252,7 +272,7 @@ class DesktopApplication:
         ):
             workspace.grid(row=0, column=0, sticky="nsew")
 
-        planner = PlannerView(planner_shell.content)
+        planner = ScenarioComparisonWorkspaceView(planner_shell.content)
         comparison = ComparisonView(comparison_shell.content)
         economy = EconomyTimelineView(economy_shell.content)
 
@@ -288,6 +308,8 @@ class DesktopApplication:
         if self._active_workspace is not None:
             self.workspaces[self._active_workspace].deactivate()
 
+        if name == "planner":
+            self.scenario_comparison_workspace_presenter.refresh()
         if name == "economy":
             self.economy_presenter.refresh_context()
 

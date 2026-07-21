@@ -261,6 +261,43 @@ class PlannerPresenter:
         self._on_context_changed()
         self._submit_current_selection()
 
+    def hydrate_semantic_selection(
+        self,
+        selection: PlanningSelection,
+    ) -> None:
+        """Synchronize controls and presenter-local state without replacing selection."""
+        sids = self._service.list_buildings(selection.faction)
+        candidates = self._load_candidates(selection.faction, sids)
+        levels = self._service.list_building_levels(
+            selection.faction,
+            selection.target.sid,
+        )
+        self._state.select_faction(selection.faction, candidates)
+        self._state.select_building(selection.target.sid)
+        self._state.select_level(selection.target.level)
+        self._state.starting_date = selection.starting_date
+        self._state.replace_scenario(selection.scenario)
+        self._view.set_buildings(sids)
+        self._view.set_levels(levels)
+        self._view.set_selection_values(
+            selection.faction,
+            selection.target.sid,
+            selection.target.level,
+        )
+        self._view.set_starting_date(selection.starting_date)
+        self._view.set_starting_buildings(candidates, selection.scenario)
+        self._view.set_planning_mode(self._state.override_count)
+
+    def render_workspace_snapshot(
+        self,
+        snapshot: PlanningWorkspaceSnapshot,
+    ) -> None:
+        """Render one supplied immutable collection-member snapshot."""
+        selection = snapshot.base(DEFAULT_BASE_PLAN_ID).selection
+        if selection is not None:
+            self.hydrate_semantic_selection(selection)
+        self._render_snapshot(snapshot)
+
     def _selection_became_incomplete(self) -> None:
         self._workspace.reset_selection(DEFAULT_BASE_PLAN_ID)
         self._state.clear_results()

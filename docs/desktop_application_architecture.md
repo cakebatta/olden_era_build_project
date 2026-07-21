@@ -470,3 +470,21 @@ This architecture succeeds when the application can replan automatically from se
 ## Interactive Build Plan Timeline (UI-008)
 
 The presenter projects accepted `BuildPlan.steps` into immutable timeline presentation values. The passive view renders a focusable chronological Treeview and independently suppresses equivalent timeline rebuilds. Retained timelines are explicitly labeled as previous.
+
+## Sprint 15 Desktop Scenario Comparison Workspace (UI-009)
+
+The desktop composition root owns one application-scoped
+`ScenarioComparisonCollection` and one
+`ScenarioComparisonExecutionCoordinator`. The first member remains the primary
+persisted workspace used by scenario persistence and economy context; no
+standalone `PlanningWorkspace` is constructed outside the collection.
+
+The collection presenter composes one existing `PlannerState`,
+`ScenarioAwarePlannerPresenter`, and `PlannerView` per stable `WorkspaceId`.
+A thin execution adapter routes the existing presenter execution contract
+through BE-012 identity-and-revision correlation.
+
+Collection controls mutate backend membership, labels, and Left/Right
+presentation roles. Semantic duplication uses the backend collection operation
+and starts an independent lifecycle. Label and comparison-role changes never
+invoke planning.

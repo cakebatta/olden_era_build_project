@@ -22,11 +22,25 @@ def require(value: bool, message: str) -> None:
         raise AssertionError(message)
 
 
-def test_application_owns_single_workspace_and_coordinator() -> None:
+def test_application_owns_single_comparison_collection_and_coordinator() -> None:
     text = source(APP)
-    require(text.count("PlanningWorkspace.create()") == 1, "Exactly one workspace required")
-    require(text.count("PlanningExecutionCoordinator(") == 1, "Exactly one coordinator required")
-    require("self.planning_workspace" in text, "Workspace must be application-owned")
+    require(
+        text.count("ScenarioComparisonCollection.create()") == 1,
+        "Exactly one application-scoped comparison collection required",
+    )
+    require(
+        text.count("ScenarioComparisonExecutionCoordinator(") == 1,
+        "Exactly one comparison execution coordinator required",
+    )
+    require(
+        "PlanningWorkspace.create()" not in text,
+        "Application must not construct workspaces outside the collection",
+    )
+    require(
+        "self.planning_workspace = (" in text
+        and "self.scenario_comparison_collection.workspace(" in text,
+        "Primary compatibility workspace must resolve from the collection",
+    )
 
 
 def test_presenter_uses_workspace_orchestration() -> None:
