@@ -13,7 +13,10 @@ from ..scenario_comparison_presentation import (
     ScenarioComparisonMemberPresentation,
     ScenarioComparisonPresentation,
 )
-from ..scenario_presenters import ScenarioAwarePlannerPresenter
+from .build_plan_comparison_presenter import (
+    BuildPlanComparisonPresenter,
+    ComparisonAwarePlannerPresenter,
+)
 from ..state import PlannerState
 
 
@@ -47,6 +50,11 @@ class ScenarioComparisonWorkspacePresenter:
             ScenarioComparisonPresentation | None
         ) = None
         self._primary_workspace_id = collection.workspace_ids[0]
+        self._build_plan_comparison_presenter = BuildPlanComparisonPresenter(
+            service,
+            collection,
+            view.comparison_view,
+        )
 
         view.set_event_handlers(
             on_create=self.on_create_workspace,
@@ -196,13 +204,16 @@ class ScenarioComparisonWorkspacePresenter:
                 self._coordinator,
                 member.workspace_id,
             )
-            presenter = ScenarioAwarePlannerPresenter(
+            presenter = ComparisonAwarePlannerPresenter(
                 self._service,
                 self._collection.workspace(member.workspace_id),
                 adapter,
                 state,
                 planner_view,
                 self._set_status,
+                on_comparison_changed=(
+                    self._build_plan_comparison_presenter.refresh
+                ),
                 on_context_changed=(
                     self._on_primary_context_changed
                     if member.workspace_id == self._primary_workspace_id
@@ -250,3 +261,4 @@ class ScenarioComparisonWorkspacePresenter:
         if presentation != self._last_collection_presentation:
             self._view.render_collection(presentation)
             self._last_collection_presentation = presentation
+        self._build_plan_comparison_presenter.refresh()

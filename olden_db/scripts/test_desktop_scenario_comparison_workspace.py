@@ -58,7 +58,22 @@ def test_backend_collection_operations_are_used() -> None:
 
 def test_presenter_composes_existing_workspace_components() -> None:
     text = PRESENTER.read_text(encoding="utf-8")
-    require("ScenarioAwarePlannerPresenter(" in text, "existing presenter not reused")
+    comparison_presenter = (
+        ROOT
+        / "olden_db"
+        / "desktop"
+        / "presenters"
+        / "build_plan_comparison_presenter.py"
+    ).read_text(encoding="utf-8")
+    require(
+        "ComparisonAwarePlannerPresenter(" in text,
+        "comparison-aware existing workspace presenter not composed",
+    )
+    require(
+        "class ComparisonAwarePlannerPresenter(ScenarioAwarePlannerPresenter):"
+        in comparison_presenter,
+        "comparison-aware presenter must reuse ScenarioAwarePlannerPresenter",
+    )
     require("PlannerState()" in text, "independent planner state missing")
     require("create_workspace_panel" in text, "existing planner view not composed")
     require("generate_planner_result" not in text, "collection presenter performs planning")
@@ -96,6 +111,44 @@ def test_comparison_canvas_tracks_full_workspace_height() -> None:
     require(
         "self._canvas.configure(height=requested_height)" in text,
         "Comparison canvas must not retain Tkinter's default clipped height",
+    )
+
+
+def test_compact_comparison_workspace_density() -> None:
+    workspace = VIEW.read_text(encoding="utf-8")
+    planner = (
+        ROOT / "olden_db" / "desktop" / "views" / "planner_view.py"
+    ).read_text(encoding="utf-8")
+    require(
+        "minsize=680" in workspace,
+        "Scenario columns must use the compact comparison width",
+    )
+    require(
+        "super().__init__(parent, padding=12)" in planner,
+        "Planner panels must use compact outer padding",
+    )
+    require(
+        "height=140" in planner,
+        "Starting-building viewport must preserve a compact height",
+    )
+
+
+def test_build_planner_horizontal_density_reduction() -> None:
+    workspace = VIEW.read_text(encoding="utf-8")
+    planner = (
+        ROOT / "olden_db" / "desktop" / "views" / "planner_view.py"
+    ).read_text(encoding="utf-8")
+    require(
+        "minsize=480" in workspace,
+        "Scenario workspace columns must use the reduced planner width",
+    )
+    require(
+        "wraplength=500" in planner,
+        "Planner summaries must wrap within the reduced width",
+    )
+    require(
+        '("building", "Building", 125)' in planner,
+        "Timeline columns must fit the reduced planner width",
     )
 
 

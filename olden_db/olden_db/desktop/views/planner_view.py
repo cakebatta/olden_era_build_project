@@ -34,7 +34,7 @@ class PlannerView(ttk.Frame):
     """Target selection, scenario controls, planning results, and diagnostics."""
 
     def __init__(self, parent: tk.Misc) -> None:
-        super().__init__(parent, padding=24)
+        super().__init__(parent, padding=12)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(3, weight=1)
 
@@ -82,9 +82,9 @@ class PlannerView(ttk.Frame):
             row=0, column=0, sticky="w"
         )
 
-        target = ttk.LabelFrame(self, text="Target Selection", padding=16)
-        target.grid(row=1, column=0, sticky="ew", pady=(18, 0))
-        target.columnconfigure(1, weight=1)
+        target = ttk.LabelFrame(self, text="Target Selection", padding=10)
+        target.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+        target.columnconfigure(1, weight=0)
 
         ttk.Label(target, text="Faction").grid(row=0, column=0, sticky="w", padx=(0, 12), pady=5)
         self._faction_selector = ttk.Combobox(target, textvariable=self._faction_var, state="readonly")
@@ -144,7 +144,7 @@ class PlannerView(ttk.Frame):
         self._generate_button.grid_remove()
 
         scenario = ttk.LabelFrame(self, text="Starting Buildings", padding=10)
-        scenario.grid(row=2, column=0, sticky="ew", pady=(18, 0))
+        scenario.grid(row=2, column=0, sticky="ew", pady=(10, 0))
         scenario.columnconfigure(0, weight=1)
 
         header = ttk.Frame(scenario)
@@ -158,9 +158,9 @@ class PlannerView(ttk.Frame):
         ).grid(row=0, column=1, sticky="e")
 
         shell = ttk.Frame(scenario)
-        shell.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+        shell.grid(row=1, column=0, sticky="ew", pady=(6, 0))
         shell.columnconfigure(0, weight=1)
-        self._scenario_canvas = tk.Canvas(shell, height=180, highlightthickness=0)
+        self._scenario_canvas = tk.Canvas(shell, height=140, highlightthickness=0)
         scrollbar = tk.Scrollbar(
             shell,
             orient="vertical",
@@ -191,7 +191,7 @@ class PlannerView(ttk.Frame):
         self.clear_starting_buildings()
 
         results = ttk.LabelFrame(self, text="Planning Results", padding=8)
-        results.grid(row=3, column=0, sticky="nsew", pady=(18, 0))
+        results.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
         results.columnconfigure(0, weight=1)
         results.rowconfigure(1, weight=1)
 
@@ -208,15 +208,15 @@ class PlannerView(ttk.Frame):
             workspace_status,
             textvariable=self._workspace_detail_var,
             justify="left",
-            wraplength=720,
+            wraplength=500,
         ).grid(row=1, column=0, sticky="ew", pady=(3, 0))
         ttk.Separator(workspace_status).grid(row=2, column=0, sticky="ew", pady=8)
         ttk.Label(workspace_status, text="Persistent Planning Summary", font=("TkDefaultFont", 11, "bold")).grid(row=3, column=0, sticky="w")
         ttk.Label(workspace_status, textvariable=self._summary_result_status_var, font=("TkDefaultFont", 10, "bold")).grid(row=4, column=0, sticky="w", pady=(5, 0))
-        ttk.Label(workspace_status, textvariable=self._summary_selection_var, justify="left", wraplength=720).grid(row=5, column=0, sticky="ew", pady=(4, 0))
-        ttk.Label(workspace_status, textvariable=self._summary_metrics_var, justify="left", wraplength=720).grid(row=6, column=0, sticky="ew", pady=(4, 0))
-        ttk.Label(workspace_status, textvariable=self._summary_diagnostics_var, justify="left", wraplength=720).grid(row=7, column=0, sticky="ew", pady=(4, 0))
-        self._summary_failure_label = ttk.Label(workspace_status, textvariable=self._summary_failure_var, justify="left", wraplength=720, style="Diagnostic.Error.TLabel")
+        ttk.Label(workspace_status, textvariable=self._summary_selection_var, justify="left", wraplength=500).grid(row=5, column=0, sticky="ew", pady=(4, 0))
+        ttk.Label(workspace_status, textvariable=self._summary_metrics_var, justify="left", wraplength=500).grid(row=6, column=0, sticky="ew", pady=(4, 0))
+        ttk.Label(workspace_status, textvariable=self._summary_diagnostics_var, justify="left", wraplength=500).grid(row=7, column=0, sticky="ew", pady=(4, 0))
+        self._summary_failure_label = ttk.Label(workspace_status, textvariable=self._summary_failure_var, justify="left", wraplength=500, style="Diagnostic.Error.TLabel")
         self._summary_failure_label.grid(row=8, column=0, sticky="ew", pady=(4, 0))
         self._summary_failure_label.grid_remove()
 
@@ -238,7 +238,7 @@ class PlannerView(ttk.Frame):
             timeline,
             textvariable=self._timeline_empty_var,
             justify="left",
-            wraplength=720,
+            wraplength=500,
         )
         self._timeline_empty_label.grid(row=1, column=0, sticky="ew", pady=(5, 7))
 
@@ -251,12 +251,12 @@ class PlannerView(ttk.Frame):
             height=9,
         )
         headings = (
-            ("position", "Position", 92),
-            ("building", "Building", 180),
-            ("level", "Level", 70),
-            ("date", "Construction date", 210),
-            ("cost", "Individual cost", 160),
-            ("cumulative", "Cumulative cost", 170),
+            ("position", "Position", 65),
+            ("building", "Building", 125),
+            ("level", "Level", 52),
+            ("date", "Construction date", 145),
+            ("cost", "Individual cost", 112),
+            ("cumulative", "Cumulative cost", 120),
         )
         for column, heading, width in headings:
             self._timeline_tree.heading(column, text=heading)
@@ -283,7 +283,7 @@ class PlannerView(ttk.Frame):
             timeline,
             textvariable=self._timeline_detail_var,
             justify="left",
-            wraplength=720,
+            wraplength=500,
         ).grid(row=3, column=0, columnspan=2, sticky="ew", pady=(7, 0))
 
         self._results_text = tk.Text(results, state="disabled", height=1)

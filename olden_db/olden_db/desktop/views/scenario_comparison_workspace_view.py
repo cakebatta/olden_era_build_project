@@ -7,6 +7,7 @@ from tkinter import ttk
 from olden_db.scenario_comparison import ComparisonRole, WorkspaceId
 
 from ..scenario_comparison_presentation import ScenarioComparisonPresentation
+from .build_plan_comparison_view import BuildPlanComparisonView
 from .planner_view import PlannerView
 
 
@@ -22,7 +23,7 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
     """Compose existing PlannerView panels in one horizontal workspace."""
 
     def __init__(self, parent: tk.Misc) -> None:
-        super().__init__(parent, padding=14)
+        super().__init__(parent, padding=8)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
 
@@ -52,7 +53,7 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
             text="Left: Unassigned    |    Right: Unassigned",
             justify="left",
         )
-        self._role_summary.grid(row=1, column=0, sticky="w", pady=(8, 10))
+        self._role_summary.grid(row=1, column=0, sticky="w", pady=(4, 6))
 
         shell = ttk.Frame(self)
         shell.grid(row=2, column=0, sticky="nsew")
@@ -77,6 +78,14 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
         self._content.bind("<Configure>", self._refresh_scroll_region)
         self._canvas.bind("<Shift-MouseWheel>", self._scroll_horizontally)
 
+        self.comparison_view = BuildPlanComparisonView(self)
+        self.comparison_view.grid(
+            row=3,
+            column=0,
+            sticky="nsew",
+            pady=(14, 0),
+        )
+
     def set_event_handlers(self, **handlers: Callable[..., None]) -> None:
         self._handlers = dict(handlers)
 
@@ -85,19 +94,19 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
         if existing is not None:
             return existing
 
-        panel = ttk.LabelFrame(self._content, padding=8, width=820)
+        panel = ttk.LabelFrame(self._content, padding=5, width=480)
         panel.grid(
             row=0,
             column=len(self._panels),
             sticky="nsew",
-            padx=(0, 12),
+            padx=(0, 8),
         )
         panel.grid_propagate(True)
         panel.columnconfigure(0, weight=1)
         panel.rowconfigure(1, weight=1)
 
         controls = ttk.Frame(panel)
-        controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        controls.grid(row=0, column=0, sticky="ew", pady=(0, 4))
         controls.columnconfigure(0, weight=1)
 
         label_var = tk.StringVar()
@@ -170,7 +179,7 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
         for column, member in enumerate(presentation.members):
             panel, remove_button = self._panels[member.workspace_id]
             panel.grid_configure(column=column)
-            self._content.columnconfigure(column, minsize=820)
+            self._content.columnconfigure(column, minsize=480)
             self._label_vars[member.workspace_id].set(member.label)
             self._role_vars[member.workspace_id].set(
                 _ROLE_TO_TEXT[member.comparison_role]

@@ -495,3 +495,26 @@ Desktop presenters request current accepted inputs from the Scenario Comparison
 collection and call `PlanningQueryService.compare_accepted_build_plans`.
 Presenters do not import alignment implementation, planner internals, graph
 algorithms, or mutable workspace state.
+
+## Sprint 17 Build Plan Comparison Presentation (UI-010)
+
+The Scenario Comparison Workspace composes one read-only Build Plan Comparison
+panel below the independent Planning Workspace panels. A dedicated comparison
+presenter consumes immutable collection snapshots, resolves the assigned Left
+and Right members, and calls only
+`PlanningQueryService.compare_accepted_build_plans(...)` when both members have
+current accepted results.
+
+All signed deltas, aligned rows, relationship classifications, and
+shared/exclusive collections remain authoritative BE-013 facts. The presenter
+projects them into immutable UI-only models without alignment, membership,
+resource, ranking, recommendation, or planner logic.
+
+The most recent successful comparison remains visible while either role member
+is pending with a retained accepted result. A new authoritative comparison
+replaces it after synchronous planning acceptance. If an accepted result no
+longer exists, the panel transitions to comparison unavailable.
+
+The comparison view is passive and owns only layout, typography, row styling,
+keyboard focus, and scrolling.
+
