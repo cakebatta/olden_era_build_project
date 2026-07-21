@@ -71,6 +71,34 @@ def test_role_changes_do_not_execute() -> None:
     require("_coordinator.execute" not in text[start:end], "role change triggered planning")
 
 
+def test_workspace_panels_preserve_composed_view_height() -> None:
+    text = VIEW.read_text(encoding="utf-8")
+    require(
+        "panel.grid_propagate(False)" not in text,
+        "Workspace panel must not suppress the composed PlannerView height",
+    )
+    require(
+        "panel.grid_propagate(True)" in text,
+        "Workspace panel must allow geometry propagation",
+    )
+    require(
+        "self._content.columnconfigure(column, minsize=820)" in text,
+        "Workspace columns must retain a usable comparison width",
+    )
+
+
+def test_comparison_canvas_tracks_full_workspace_height() -> None:
+    text = VIEW.read_text(encoding="utf-8")
+    require(
+        "requested_height = self._content.winfo_reqheight()" in text,
+        "Comparison canvas must use the full composed workspace height",
+    )
+    require(
+        "self._canvas.configure(height=requested_height)" in text,
+        "Comparison canvas must not retain Tkinter's default clipped height",
+    )
+
+
 def test_view_is_passive() -> None:
     text = VIEW.read_text(encoding="utf-8")
     for forbidden in (

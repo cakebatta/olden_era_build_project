@@ -89,10 +89,10 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
         panel.grid(
             row=0,
             column=len(self._panels),
-            sticky="ns",
+            sticky="nsew",
             padx=(0, 12),
         )
-        panel.grid_propagate(False)
+        panel.grid_propagate(True)
         panel.columnconfigure(0, weight=1)
         panel.rowconfigure(1, weight=1)
 
@@ -170,6 +170,7 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
         for column, member in enumerate(presentation.members):
             panel, remove_button = self._panels[member.workspace_id]
             panel.grid_configure(column=column)
+            self._content.columnconfigure(column, minsize=820)
             self._label_vars[member.workspace_id].set(member.label)
             self._role_vars[member.workspace_id].set(
                 _ROLE_TO_TEXT[member.comparison_role]
@@ -215,6 +216,10 @@ class ScenarioComparisonWorkspaceView(ttk.Frame):
         self,
         _event: tk.Event[tk.Misc] | None = None,
     ) -> None:
+        self._content.update_idletasks()
+        requested_height = self._content.winfo_reqheight()
+        if requested_height > 1:
+            self._canvas.configure(height=requested_height)
         bounds = self._canvas.bbox("all")
         if bounds is not None:
             self._canvas.configure(scrollregion=bounds)
