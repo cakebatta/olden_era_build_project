@@ -140,6 +140,19 @@ Automatic execution and stale-result handling remain above the Query Layer.
 
 Every workspace owns an independent selection revision, accepted-result revision, pending state, retained-result state, and failure state.
 
+
+### Objective intent versus execution strategy
+
+`ObjectiveSet` expresses desired end state only.
+
+It never specifies construction sequence or priority. The planner alone chooses
+the deterministic legal execution order from canonical prerequisites, starting
+state, construction constraints, economy, and documented tie-breaking.
+
+UI selection order and Objective Set iteration order must not become planning
+priority. Future ordering constraints, deadlines, or priorities require separate
+typed contracts.
+
 ### Multi-objective planning
 
 `Objective` is an explicit closed tagged union of supported immutable objective variants.
@@ -235,6 +248,7 @@ Views own widgets and interaction mechanics. Formatting remains pure presentatio
 21. Validation and infeasibility use explicit typed contracts.
 22. Single-target planning is preserved as a one-objective compatibility adapter.
 23. Future multi-town planning composes town-owned objective sets under a scenario scheduler rather than embedding shared-economy state in the single-town planner.
+24. Objective Set order never specifies execution order; the planner owns execution strategy.
 
 ## Primary Documentation
 

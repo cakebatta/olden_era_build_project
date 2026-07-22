@@ -286,6 +286,54 @@ No planner-domain operation accepts an unrelated list of Objective values alongs
 
 A Query Layer convenience method may accept fields separately only by immediately constructing and validating this request.
 
+
+## Objective Intent and Execution-Order Invariant
+
+`ObjectiveSet` represents desired deterministic end state.
+
+It answers:
+
+> What outcomes must be satisfied?
+
+It does not answer:
+
+> In what order must they be satisfied?
+
+For example:
+
+```text
+Treasury
+Mage Guild III
+```
+
+means:
+
+```text
+Both objectives must be completed.
+```
+
+It does not mean:
+
+```text
+Build Treasury before Mage Guild III.
+```
+
+Execution order belongs exclusively to the planner and is determined from:
+
+- prerequisite legality;
+- effective starting state;
+- approved construction constraints;
+- deterministic resource and income behavior;
+- the planner's documented deterministic tie-breaker.
+
+Objective insertion order, UI selection order, serialized tuple order before
+normalization, and display order must not impose execution priority.
+
+If a future feature requires player-authored ordering constraints, priorities,
+deadlines, or optimization preferences, those must be modeled as separate typed
+planning constraints. They must not be encoded implicitly through
+`ObjectiveSet` membership or ordering.
+
 ## Dependency Union
 
 For each Objective:
@@ -664,6 +712,7 @@ Future implementation must validate:
 - ObjectiveSet immutability;
 - duplicate normalization;
 - deterministic ordering;
+- Objective Set membership does not impose schedule order;
 - request ownership of ObjectiveSet;
 - typed request errors;
 - typed infeasibility outcomes;
@@ -693,4 +742,5 @@ ARCH-022 is complete when documentation establishes:
 - typed request and infeasibility failures;
 - single-target compatibility;
 - deterministic dependency-union planning;
-- a stable future multi-town seam.
+- a stable future multi-town seam;
+- an explicit invariant that objectives express desired end state while the planner owns execution strategy.

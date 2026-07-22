@@ -195,6 +195,28 @@ A future objective variant must define:
 No generic string objective, untyped mapping, UI object, or mutable plugin
 registry is part of the public contract.
 
+
+## Objective Intent Invariant
+
+An `ObjectiveSet` describes required end-state outcomes.
+
+The Query Layer must not interpret:
+
+- objective insertion order;
+- UI selection order;
+- normalized tuple order;
+- display order;
+
+as requested execution order or priority.
+
+`generate_objective_plan(...)` delegates execution strategy to the planner.
+Construction sequence is determined only by canonical legality, effective
+starting state, approved scheduling constraints, deterministic economy, and the
+planner's documented tie-breaker.
+
+Future user-authored priorities, deadlines, or ordering constraints require
+separate typed request fields and separate architectural approval.
+
 ## Planning Interface
 
 Supported planning operations include:
@@ -407,6 +429,7 @@ localization storage, and typed failure implementation details remain private.
 - Objective is a typed union, not an alias for BuildingKey.
 - TownPlanningRequest owns one ObjectiveSet.
 - ObjectiveSet owns normalized immutable Objective membership.
+- ObjectiveSet expresses desired end state and never execution order.
 - Multi-objective planning produces one integrated plan.
 - Shared prerequisites are scheduled and charged once.
 - Reverse build-step provenance is authoritative result data.
