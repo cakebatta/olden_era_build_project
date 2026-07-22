@@ -15,6 +15,14 @@ from .graph import DependencyGraph, build_dependency_graph, iter_topological_ord
 from .income_timeline import calculate_income_timeline
 from .localization import parse_localization_file
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
+from .objective_query_models import (
+    BuildStepExplanation,
+    MultiObjectivePlanningResultView,
+    ObjectiveCompletionView,
+    ObjectivePlanningSummary,
+    ObjectiveSummary,
+    PrerequisiteProvenance,
+)
 from .objective_planning import (
     BuildingCompletionObjective,
     CrossTownObjectiveError,
@@ -258,6 +266,129 @@ class PlanningQueryService:
             city,
             request,
             starting_buildings=starting_buildings,
+        )
+
+    def generate_objective_plan_view(
+        self,
+        request: TownPlanningRequest,
+    ) -> MultiObjectivePlanningResultView | ObjectivePlanningFailure:
+        """Return immutable display-ready multi-objective Query Layer models."""
+        outcome = self.generate_objective_plan(request)
+        if isinstance(outcome, ObjectivePlanningFailure):
+            return outcome
+
+        city = self._get_city(request.town_state.faction)
+        objective_summaries = tuple(
+            ObjectiveSummary(
+                objective=objective,
+                canonical_building=objective.building,
+                display_name=self.get_building_display_name(objective.building),
+            )
+            for objective in request.objective_set
+        )
+        summary_by_objective = {
+            item.objective: item for item in objective_summaries
+        }
+
+        provenance_views = []
+        completion_views = []
+        for dependency, completion in zip(
+            outcome.objective_dependencies,
+            outcome.objective_completions,
+            strict=True,
+        ):
+            required = tuple(sorted(dependency.required_buildings))
+            required_set = set(required)
+            relationships = tuple(
+                sorted(
+                    (prerequisite, building)
+                    for building in required
+                    for prerequisite in city.buildings[building].prerequisites
+                    if prerequisite in required_set
+                )
+            )
+            provenance = PrerequisiteProvenance(
+                objective=summary_by_objective[dependency.objective],
+                required_buildings=required,
+                required_build_steps=tuple(sorted(dependency.constructed_buildings)),
+                satisfied_at_start=tuple(sorted(dependency.satisfied_at_start)),
+                prerequisite_relationships=relationships,
+            )
+            provenance_views.append(provenance)
+            completion_views.append(
+                ObjectiveCompletionView(
+                    objective=summary_by_objective[completion.objective],
+                    completed=completion.completed,
+                    completion_day=completion.completion_date,
+                    satisfied_at_start=completion.satisfied_at_start,
+                    completing_action=completion.completing_action,
+                    provenance=provenance,
+                )
+            )
+
+        provenance_by_building = {
+            item.building: item for item in outcome.step_provenance
+        }
+        plan_buildings = set(outcome.plan.order)
+        remaining = outcome.plan.total_cost
+        step_views = []
+        for step in outcome.plan.steps:
+            balance_before = remaining
+            balance_after = balance_before - step.individual_cost
+            remaining = balance_after
+            direct_prerequisites = tuple(
+                sorted(
+                    prerequisite
+                    for prerequisite in city.buildings[step.building].prerequisites
+                    if prerequisite in plan_buildings
+                )
+            )
+            downstream = tuple(
+                sorted(
+                    candidate
+                    for candidate in outcome.plan.order
+                    if step.building in city.buildings[candidate].prerequisites
+                )
+            )
+            provenance = provenance_by_building[step.building]
+            step_views.append(
+                BuildStepExplanation(
+                    step_number=step.step_number,
+                    building=step.building,
+                    display_name=self.get_building_display_name(step.building),
+                    construction_day=step.date,
+                    resource_cost=step.individual_cost,
+                    prerequisite_buildings=direct_prerequisites,
+                    required_by_objectives=tuple(
+                        summary_by_objective[objective]
+                        for objective in provenance.required_by
+                    ),
+                    objective_targets=tuple(
+                        summary_by_objective[objective]
+                        for objective in provenance.objective_targets
+                    ),
+                    downstream_buildings_enabled=downstream,
+                    resource_balance_before=balance_before,
+                    resource_balance_after=balance_after,
+                    income_change=city.buildings[step.building].income,
+                )
+            )
+
+        summary = ObjectivePlanningSummary(
+            request=request,
+            objectives=objective_summaries,
+            completion_state=outcome.completion_state,
+            starting_day=outcome.plan.starting_date,
+            completion_day=outcome.plan.completion_date,
+            total_cost=outcome.plan.total_cost,
+            build_action_count=outcome.plan.build_actions,
+        )
+        return MultiObjectivePlanningResultView(
+            summary=summary,
+            objective_completions=tuple(completion_views),
+            prerequisite_provenance=tuple(provenance_views),
+            build_steps=tuple(step_views),
+            diagnostics=outcome.diagnostics,
         )
 
     @staticmethod
