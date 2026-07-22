@@ -70,6 +70,11 @@ def require_english_cities_localization_file() -> Path:
     return ENGLISH_CITIES_LOCALIZATION_FILE
 
 
+def require_english_planner_localization_file() -> Path:
+    """Return the explicit English planner-localization source document."""
+    return require_english_cities_localization_file()
+
+
 def require_output_directory(*, create: bool = True) -> Path:
     """Return OUTPUT_DIR, optionally creating it when absent."""
     if create:

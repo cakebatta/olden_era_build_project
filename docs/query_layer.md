@@ -295,3 +295,10 @@ Use repository-provided test modules with:
 ```text
 python -m scripts...
 ```
+
+## BE-014 Planner Localization Catalog Implementation
+
+Canonical startup parses one explicit planner-localization source document and constructs one immutable `PlannerLocalizationCatalog`. The builder enumerates only planner-visible canonical factions, buildings, units, and upgrades from `LoadedGameData`; unrelated interface tokens are not copied into planner indexes.
+
+Public display-name operations are `get_faction_display_name(...)`, `get_building_display_name(...)`, `get_unit_display_name(...)`, and `get_upgrade_display_name(...)`. Existing display-text operations remain compatible and delegate to the catalog.
+

@@ -963,3 +963,8 @@ ARCH-021 is satisfied when repository documentation establishes:
 - passive presentation boundaries;
 - BE-014 implementation and validation requirements;
 - sufficient support for UI-011 without further architectural redesign.
+
+## BE-014 Realization
+
+BE-014 realizes this architecture with `planner_localization.py`. Canonical startup uses the explicit English `cities.json` planner source rather than directory parsing. Existing parser duplicate semantics are unchanged. Temporary dictionaries exist only during construction; the published catalog uses immutable mappings and performs no lookup-time I/O or mutation.
+

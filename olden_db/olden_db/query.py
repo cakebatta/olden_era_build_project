@@ -13,9 +13,13 @@ from .database import LoadedGameData, load_default_game_data
 from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .income_timeline import calculate_income_timeline
-from .localization import LocalizationCatalog, parse_localization_directory
+from .localization import parse_localization_file
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
-from .paths import require_english_localization_directory
+from .paths import require_english_planner_localization_file
+from .planner_localization import (
+    PlannerLocalizationCatalog,
+    build_planner_localization_catalog,
+)
 from .planner import (
     BuildPlan,
     GameDate,
@@ -48,41 +52,67 @@ class UnknownBuildingError(QueryError):
     """Raised when a requested building level is not present."""
 
 
+class UnknownUnitError(QueryError):
+    """Raised when a requested unit identity is not present."""
+
+
 @dataclass(frozen=True, slots=True)
 class PlanningQueryService:
     """Stable public interface for deterministic building-planning queries."""
 
     _data: LoadedGameData
-    _localization: LocalizationCatalog | None = None
+    _planner_localization: PlannerLocalizationCatalog | None = None
 
     @classmethod
     def from_default_game_data(cls) -> "PlanningQueryService":
         """Create a ready-to-use service from the canonical game data."""
+        data = load_default_game_data()
+        localization = parse_localization_file(
+            require_english_planner_localization_file(),
+            language="english",
+        )
         return cls(
-            load_default_game_data(),
-            parse_localization_directory(
-                require_english_localization_directory(),
-                language="english",
-            ),
+            data,
+            build_planner_localization_catalog(data, localization),
         )
 
     def list_factions(self) -> tuple[str, ...]:
         return tuple(sorted(self._data.cities.cities))
 
-    def get_faction_display_text(self, faction: str) -> str:
-        city = self._get_city(faction)
-        if self._localization is None:
+    def get_faction_display_name(self, faction: str) -> str:
+        self._get_city(faction)
+        if self._planner_localization is None:
             return faction
-        for candidate in (city.city_id, faction):
-            if candidate and self._localization.contains(candidate):
-                return self._localization.get(candidate)
-        return faction
+        return self._planner_localization.get_faction_display_name(faction)
 
-    def get_unit_display_text(self, unit_sid: str) -> str:
-        definition = self._data.units.get(unit_sid)
-        if self._localization is None:
+    def get_faction_display_text(self, faction: str) -> str:
+        """Compatibility alias for the planner faction display-name operation."""
+        return self.get_faction_display_name(faction)
+
+    def get_unit_display_name(self, faction: str, unit_sid: str) -> str:
+        definition = self._get_unit(faction, unit_sid)
+        if self._planner_localization is None:
             return definition.sid
-        return self._localization.resolve(definition.sid, fallback=definition.sid) or definition.sid
+        return self._planner_localization.get_unit_display_name(faction, unit_sid)
+
+    def get_unit_display_text(self, faction_or_unit_sid: str, unit_sid: str | None = None) -> str:
+        """Return a unit display name while preserving the legacy one-argument form."""
+        if unit_sid is None:
+            definition = self._get_unit_by_sid(faction_or_unit_sid)
+            return self.get_unit_display_name(definition.faction, definition.sid)
+        return self.get_unit_display_name(faction_or_unit_sid, unit_sid)
+
+    def get_upgrade_display_name(self, faction: str, upgrade_sid: str) -> str:
+        definition = self._get_unit(faction, upgrade_sid)
+        if self._planner_localization is None:
+            return definition.sid
+        try:
+            return self._planner_localization.get_upgrade_display_name(faction, upgrade_sid)
+        except KeyError:
+            return self._planner_localization.get_unit_display_name(faction, upgrade_sid)
+
+    def get_upgrade_display_text(self, faction: str, upgrade_sid: str) -> str:
+        return self.get_upgrade_display_name(faction, upgrade_sid)
 
     def list_faction_unit_display_texts(self, faction: str) -> tuple[tuple[int, str, str], ...]:
         self._get_city(faction)
@@ -116,27 +146,18 @@ class PlanningQueryService:
                 f"Unknown building: faction={faction!r}, sid={sid!r}, level={level}"
             ) from exc
 
-    def get_building_display_text(self, building: BuildingKey) -> str:
-        """
-        Return localized display text for one canonical building identity.
-
-        Localization remains a Query Layer responsibility. Application clients
-        must not read localization catalogs or repository paths directly.
-        """
+    def get_building_display_name(self, building: BuildingKey) -> str:
+        """Return planner-facing text without changing canonical BuildingKey identity."""
         if not isinstance(building, BuildingKey):
             raise TypeError("building must be a BuildingKey")
-        definition = self.get_building(
-            building.faction,
-            building.sid,
-            building.level,
-        )
-        fallback = definition.name_key or building.sid
-        if self._localization is None:
-            return fallback
-        return self._localization.resolve(
-            definition.name_key,
-            fallback=fallback,
-        ) or fallback
+        self.get_building(building.faction, building.sid, building.level)
+        if self._planner_localization is None:
+            return building.sid
+        return self._planner_localization.get_building_display_name(building)
+
+    def get_building_display_text(self, building: BuildingKey) -> str:
+        """Compatibility alias for the planner building display-name operation."""
+        return self.get_building_display_name(building)
 
     def get_prerequisites(
         self,
@@ -368,6 +389,23 @@ class PlanningQueryService:
             return self._data.cities.city(faction)
         except KeyError as exc:
             raise UnknownFactionError(f"Unknown faction: {faction!r}") from exc
+
+    def _get_unit_by_sid(self, unit_sid: str):
+        if not unit_sid:
+            raise QueryError("unit_sid cannot be empty")
+        try:
+            return self._data.units.get(unit_sid)
+        except KeyError as exc:
+            raise UnknownUnitError(f"Unknown unit SID: {unit_sid!r}") from exc
+
+    def _get_unit(self, faction: str, unit_sid: str):
+        self._get_city(faction)
+        definition = self._get_unit_by_sid(unit_sid)
+        if definition.faction != faction:
+            raise UnknownUnitError(
+                f"Unknown unit for faction: faction={faction!r}, unit_sid={unit_sid!r}"
+            )
+        return definition
 
     def _build_graph(
         self,
