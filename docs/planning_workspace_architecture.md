@@ -11,7 +11,7 @@
 
 This document defines the canonical architecture for the interactive Planning Workspace.
 
-The application is evolving from a transactional workflow, in which the player explicitly requests plan generation, to a responsive workspace in which semantic planning changes automatically refresh planning results, costs, schedules, and diagnostics.
+The application is evolving from a transactional workflow, in which the player explicitly requests plan generation, to a responsive workspace in which semantic planning changes automatically refresh planning results, costs, schedules, diagnostics, and approved explanation presentation.
 
 This architecture preserves the deterministic planner, the Query Layer as the supported backend boundary, and separation between application state, presentation, and UI controls.
 
@@ -19,7 +19,7 @@ This architecture preserves the deterministic planner, the Query Layer as the su
 
 Adopt an application-scoped `PlanningWorkspace` above the Query Layer.
 
-The workspace owns semantic planning selections, planning-result lifecycle, revision tracking, and future per-base planning entries. It does not own planner algorithms, graph traversal, diagnostics generation, presentation formatting, or widget state.
+The workspace owns semantic planning selections, planning-result lifecycle, revision tracking, and future per-base planning entries. It does not own planner algorithms, graph traversal, diagnostics generation, explanation generation, presentation formatting, or widget state.
 
 The canonical flow is:
 
@@ -34,7 +34,7 @@ Planning Query Service
     ↓
 Planner / graph / scenario pipeline
     ↓
-PlannerResult or documented failure
+PlannerResult, MultiObjectivePlanningResultView, or documented failure
     ↓
 Workspace result state
     ↓
@@ -43,27 +43,33 @@ Presenter
 View
 ```
 
+ARCH-023 adds a presenter-owned build-step explanation selection and panel lifecycle over accepted immutable Query Layer explanation models.
+
+See `docs/build_plan_explanation_architecture.md`.
+
 ## Architectural Principles
 
 ### Player intent, not controls
 
-The application models semantic planning intent.
+The application models semantic planning intent and semantic explanation selection.
 
-Checkboxes are the preferred initial UI mechanism, but checkbox state is not a backend or domain contract. The same planning selection may later be produced through drag-and-drop, search, menus, dependency-tree interaction, or workspace restoration.
+Checkboxes, list rows, timeline markers, and other controls are interaction mechanisms, not backend or application identity.
 
 Canonical building identifiers remain authoritative. Localized labels remain presentation-only.
 
 ### Additive evolution
 
-The Planning Workspace is an application orchestration layer. It does not replace or redesign the planner.
+The Planning Workspace is application orchestration. It does not replace or redesign the planner.
 
-Existing Query Layer operations remain compatible. New Query Layer operations require separate architectural approval when their semantics are not already covered by the current public contract.
+Existing Query Layer operations remain compatible. Explanation presentation consumes accepted BE-016 contracts without adding planner reasoning.
 
-### Deterministic planning
+### Deterministic planning and explanation lifecycle
 
-For identical canonical game data and immutable planning inputs, the planner result must remain identical.
+For identical canonical game data and immutable planning inputs, planner results remain identical.
 
-Execution timing, debounce configuration, UI event frequency, thread scheduling, and interaction mechanism must not affect planning semantics.
+For identical workspace status, accepted result revision, and semantic explanation selection, explanation presentation state remains deterministic.
+
+Execution timing, debounce configuration, UI event frequency, thread scheduling, and interaction mechanism must not affect planning or explanation semantics.
 
 ## Planning Workspace
 
@@ -84,6 +90,7 @@ It does not contain:
 - mouse or keyboard events;
 - localized display names as identity;
 - graph or planner algorithms;
+- explanation derivation;
 - formatting strings;
 - debounce duration.
 
@@ -101,27 +108,17 @@ Desktop Application
 
 ## Planning Selection
 
-`PlanningSelection` is an immutable application contract representing player intent.
+`PlanningSelection` remains an immutable application contract representing player intent.
 
-For the initial Sprint 13 implementation, one planning selection contains exactly one requested target and the existing planning inputs required to generate its result:
+ARCH-022 supersedes the former single-target limitation. A complete town
+selection owns one immutable `TownPlanningRequest`, containing one `TownState`
+and one immutable `ObjectiveSet`.
 
-```text
-PlanningSelection
-    faction
-    target BuildingKey
-    starting date
-    PlanningScenario
-```
-
-The target must use canonical identity.
-
-The initial implementation must not introduce multi-target planning behavior, selected-building collections with undefined semantics, or UI-control concepts.
-
-The architecture reserves the ability to evolve planning selection semantics later. Before arbitrary multiple targets are supported, Architecture and Backend Engineering must define whether the canonical result is a combined dependency plan, independent plans, or a constrained ordered plan.
+Objective Set order does not specify execution order.
 
 ## Base Planning State
 
-Each workspace entry has stable application identity independent of faction or target.
+Each workspace entry has stable application identity independent of faction or objectives.
 
 Conceptually:
 
@@ -136,7 +133,7 @@ BasePlanningState
     latest_failure
 ```
 
-Recommended orchestration statuses are:
+Recommended orchestration statuses remain:
 
 ```text
 EMPTY
@@ -148,7 +145,7 @@ FAILED
 
 These are application lifecycle states, not planner-domain states.
 
-The initial implementation may expose only one base entry. The model must not encode a special one-base or two-base planner.
+Explanation selection is presenter-owned transient state rather than a field of canonical planning input.
 
 ## Revision and Result Rules
 
@@ -170,202 +167,169 @@ The workspace may retain the last accepted result while a replacement is pending
 
 An old result must never be represented as current.
 
+Explanation state follows the accepted result's `result_revision`.
+
 ## Update Flow
 
 ```text
 1. Player changes a planning selection.
 2. The view reports a semantic selection command.
 3. The presenter or workspace controller applies the command.
-4. The workspace creates a new immutable PlanningSelection.
+4. The workspace creates a new immutable planning request.
 5. The selection revision increments.
 6. The entry becomes INCOMPLETE or PENDING.
 7. The execution coordinator captures the selection and revision.
 8. The coordinator invokes the PlanningQueryService.
-9. The Query Layer validates canonical inputs and executes the existing pipeline.
-10. PlannerResult or a documented failure returns.
+9. The Query Layer validates canonical inputs and executes the pipeline.
+10. Immutable result view or documented failure returns.
 11. The coordinator compares the completion revision with the current revision.
 12. A matching completion is accepted; an older completion is discarded.
-13. The presenter receives an updated immutable workspace snapshot.
-14. The view renders the supplied presentation model.
+13. The presenter reconciles explanation selection against the accepted result revision.
+14. The presenter publishes an updated immutable workspace and explanation presentation.
+15. The view renders supplied presentation models.
 ```
 
-Views should report semantic operations such as:
+Views should report semantic planning and explanation operations.
 
-- set faction;
-- set target;
-- set starting date;
-- replace planning scenario;
-- reset planning selection;
-- add or remove a base when that feature is enabled.
+Views must not report backend implementation operations such as graph traversal,
+planner invocation, or explanation calculation.
 
-Views must not report backend implementation operations such as graph traversal or planner invocation.
+## Build-Plan Explanation Relationship
+
+ARCH-023 defines interactive explanation presentation.
+
+The presenter owns:
+
+- selected `BuildStepIdentity`;
+- explanation panel state;
+- rebinding or clearing selection after replanning;
+- current versus retained-result presentation;
+- immutable explanation presentation models.
+
+The Query Layer owns explanation facts through BE-016.
+
+The view owns interaction mechanics, accessibility implementation, and rendering.
+
+A selected plan step never changes planning intent or planner order.
 
 ## Execution Strategy
 
-### Initial implementation
+Initial execution remains synchronous and revision-aware.
 
-Use:
+BE-016 normally returns all build-step explanations with the accepted result view,
+so selecting a step does not require planner execution.
 
-- synchronous Query Layer calls;
-- immediate execution for discrete semantic edits;
-- explicit batching for compound replacement operations;
-- revision checks even when execution is synchronous;
-- logical cancellation through stale-result rejection;
-- no planner-level cancellation;
-- no general event bus;
-- no background worker framework.
+Future lazy or asynchronous explanation retrieval may be added only outside
+planner semantics and with result-revision stale-completion checks.
 
-### Future optimization
+## Multi-Base and Multi-Town Readiness
 
-Only after measured responsiveness requires it, the execution coordinator may add:
+The workspace remains an ordered collection of independent base or future town entries.
 
-- a short debounce;
-- background execution;
-- cooperative cancellation or queued-work replacement.
+Each entry preserves stable owner identity and accepted result revision.
 
-These changes must remain outside `PlanningSelection`, planner algorithms, and deterministic result semantics.
+Explanation selection includes owner identity, result revision, step number, and
+canonical building identity.
 
-## Multi-Base Readiness
-
-The workspace is an ordered collection of independent base entries:
-
-```text
-PlanningWorkspace
-    base_plans: tuple[BasePlanningState, ...]
-```
-
-Each entry has a stable `BasePlanId`, allowing multiple bases of the same faction to remain distinct.
-
-The initial product may expose one base, then two, and later up to five. Increasing the supported count must not require planner redesign.
-
-Each base independently owns:
-
-- faction;
-- target;
-- starting date;
-- planning scenario;
-- result;
-- diagnostics;
-- execution status.
-
-Future combined resource information must be produced by a separate deterministic aggregation boundary over accepted per-base results. Combined summaries must preserve per-base attribution and must not replace per-base results.
+Future multi-town shared-economy results may add canonical TownId and
+scenario-level explanation facts without changing the presenter/view boundary.
 
 ## Architectural Boundaries
 
 ### Planner and graph
 
-The planner and graph remain unaware of:
-
-- workspaces;
-- revisions;
-- UI interaction;
-- execution scheduling;
-- multi-base coordination.
-
-They continue to perform deterministic domain behavior.
+Remain unaware of workspaces, revisions, interaction, explanation selection, and presentation.
 
 ### Query Layer
 
-The Query Layer remains the only supported application-facing backend boundary.
+Remains the only supported application-facing backend boundary.
 
-Continuous execution is an application concern. Query Layer methods remain stateless and deterministic for immutable inputs.
-
-`generate_build_plan(...)` remains compatible. `generate_planner_result(...)`, where present in production code, is the preferred operation when canonical diagnostics and result state are required together.
-
-Arbitrary multi-target planning and workspace-level aggregation require separately approved additive contracts.
+`generate_objective_plan_view(...)` supplies immutable explanation facts.
 
 ### Presenter
 
 Presenters:
 
-- translate view actions into semantic selection commands;
+- translate view actions into semantic planning and explanation commands;
 - coordinate workspace mutation and execution;
 - render pending, ready, failed, and retained-previous-result states;
-- adapt canonical diagnostics without rewriting them;
-- associate every result with the correct base and revision.
+- own explanation selection and panel lifecycle;
+- adapt immutable Query Layer facts without rewriting them;
+- associate every result and explanation with the correct base and revision.
 
-Presenters must not calculate prerequisites, legality, costs, or scenario state.
+Presenters must not calculate prerequisites, legality, costs, scenario state,
+objective provenance, downstream unlocks, or planner rationale.
 
 ### View
 
 Views own:
 
 - widgets;
-- accessibility;
+- accessibility implementation;
 - focus and interaction mechanics;
 - visual layout;
-- visual pending and stale indicators.
+- visual pending and stale indicators;
+- pointer, keyboard, touch, and search interaction.
 
-Views do not own canonical planning selection, revision validity, planner invocation rules, or backend semantics.
+Views do not own canonical planning selection, revision validity, planner
+invocation rules, explanation facts, or backend semantics.
 
 ### Persistence
 
-Scenario persistence and active workspace orchestration are distinct responsibilities.
+Scenario persistence and active workspace orchestration remain distinct.
 
-Persistable workspace information may later include base ordering, selections, scenarios, and starting dates.
-
-Pending state, in-flight requests, revision counters, stale completions, and temporary focus are transient and must not be persisted as canonical scenario state.
+Explanation selection, panel state, result revision, temporary focus, and scroll
+position are transient and are not persisted by ARCH-023.
 
 ## Compatibility
 
 This decision is additive.
 
-Existing transactional Query Layer callers remain valid. Existing planner and scenario behavior remains unchanged. An empty scenario remains equivalent to canonical planning.
-
-The Generate action may remain temporarily as a compatibility or fallback path during migration, but ordinary planning edits should no longer require it once interactive planning is implemented.
+Existing transactional Query Layer callers, planner behavior, scenario behavior,
+workspace lifecycle, localization, and persistence remain unchanged.
 
 ## Non-Goals
 
 This architecture does not approve:
 
-- multi-target planning;
-- multi-base UI behavior;
-- combined resource aggregation;
-- asynchronous execution;
-- debouncing;
-- planner optimization;
-- drag-and-drop;
-- a reactive framework or global event bus;
-- planner or graph redesign.
+- UI controls or layout;
+- multi-town planning;
+- explanation persistence;
+- planner or graph redesign;
+- Query Layer changes;
+- optimizer rationale;
+- a global event bus.
 
 ## Required Validation
 
 Implementation must validate:
 
-- immutable semantic selection behavior;
+- immutable semantic planning and explanation selection;
 - workspace lifecycle;
 - revision increments;
 - stale-result rejection;
 - Query Layer integration;
-- deterministic equivalence for identical selections;
-- compatibility of existing planning APIs;
-- absence of UI-specific concepts in backend contracts;
+- passive views;
+- semantic step identity;
+- deterministic explanation reconciliation after replanning;
+- retained-result distinction;
+- accessibility support;
+- absence of planner or graph reasoning in presentation;
 - absence of direct desktop imports from planner or graph internals.
-
-## Migration Sequence
-
-1. Introduce the single-base Planning Workspace foundation.
-2. Move active target, scenario, and result lifecycle into workspace state.
-3. Replace Generate-button-centric orchestration with semantic selection commands.
-4. Add persistent summary presentation with explicit pending, current, retained, and failed states.
-5. Generalize the workspace collection and enable two bases.
-6. Add deterministic combined aggregation through a separately approved contract.
-7. Optimize scheduling only after profiling.
 
 ## Decision Consequences
 
 ### Benefits
 
-- Player interaction becomes responsive rather than transactional.
-- UI mechanisms remain replaceable.
-- Planner determinism and Query Layer authority are preserved.
-- Stale results cannot silently replace newer planning state.
-- One-, two-, and five-base workflows share one model.
-- Concurrency can be added later without changing planning semantics.
+- Users can inspect planner decisions without exposing planner internals.
+- Explanation interaction remains independent of widgets.
+- Automatic replanning cannot silently attach stale explanations to new plans.
+- Passive views and Query Layer authority remain intact.
+- Multi-town and timeline synchronization can reuse the same semantic selection model.
 
 ### Costs and risks
 
-- Application state becomes richer than the original transactional desktop state.
-- Presenters must explicitly represent pending and retained-result conditions.
-- The distinction between current selection and previous accepted result must remain visible.
-- Multi-target semantics remain intentionally unresolved and require future approval.
+- Presenter state becomes richer.
+- Current and retained explanations must remain visibly distinct.
+- Canonical result revision must accompany explanation selection.
+- BE-016 remaining-construction fields require careful labeling to avoid inventory misrepresentation.

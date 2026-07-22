@@ -14,6 +14,7 @@ The application models:
 - hypothetical starting scenarios;
 - diagnostics and planning failures;
 - interactive planning workspaces;
+- interactive build-plan explanation;
 - side-by-side scenario comparison workspaces;
 - immutable multi-objective town planning;
 - localized display names.
@@ -38,226 +39,102 @@ Presenters and Formatting
 Desktop Views
 ```
 
-## Core Backend Modules
-
-- `models.py` — shared canonical data structures.
-- `constants.py` — shared constants.
-- `paths.py` — canonical project paths.
-- `parser.py` — city and building logic parsing.
-- `unit_parser.py` — unit logic parsing.
-- `database.py` — connected in-memory game data.
-- `graph.py` — dependency graph and legal topological orders.
-- `planner.py` — deterministic build plans, dates, and cumulative costs.
-- objective-planning modules — immutable objective contracts, objective-set validation, dependency union, provenance, typed failures, and objective completion reporting.
-- `scenario.py` — immutable hypothetical starting-state contracts.
-- economy and diagnostic modules — deterministic analysis and canonical failure information.
-- `query.py` — stable application-facing backend boundary.
-- `localization.py` — existing localization-document parsing and duplicate-key validation.
-- `planner_localization.py` — planner-scoped display-name indexing and deterministic fallback.
-
 ## Application Architecture
 
 The desktop application is a client of the Query Layer.
 
-It must not invoke parser, database, graph, path, localization, objective-planning, or planner-algorithm internals directly.
+It must not invoke parser, database, graph, path, localization,
+objective-planning, or planner-algorithm internals directly.
 
-The interactive product uses application-scoped Planning Workspaces. ARCH-019 defines one workspace lifecycle; ARCH-020 composes independent workspaces in a Scenario Comparison Collection:
+The Scenario Planning Workspace coordinates planning, explanation, economy,
+timeline, and comparison presentation around immutable accepted results.
+
+### Interactive build-plan explanation
+
+BE-016 supplies immutable Query Layer explanation models.
+
+ARCH-023 defines presenter-owned semantic build-step selection and explanation
+panel lifecycle.
+
+Canonical flow:
 
 ```text
-Scenario Comparison Collection
-    ├── Planning Workspace A ──┐
-    ├── Planning Workspace B ──┼── shared Planning Query Service
-    └── Planning Workspace N ──┘              ↓
-                                      shared planner
+semantic build-step selection
+    ↓
+Workspace Presenter
+    ↓
+accepted immutable Query Layer explanation model
+    ↓
+immutable presentation model
+    ↓
+passive View
 ```
 
-Each workspace owns its semantic planning selection, result lifecycle, and revision tracking. The collection owns workspace identity, membership, ordering, and comparison selection. Neither layer owns planner algorithms or widget state.
+The presenter owns transient selection and automatic-replanning reconciliation.
 
-See `docs/planning_workspace_architecture.md`.
+The Query Layer owns explanation facts, localization, objective completion,
+prerequisite provenance, downstream plan relationships, income changes, and
+remaining integrated construction requirements.
 
-See `docs/scenario_comparison_architecture.md`.
+Views own controls, focus, accessibility implementation, and rendering.
+
+No presentation layer may traverse planner graphs or infer planner reasoning.
+
+A build-step selection is bound to owner identity and accepted result revision.
+It never changes Objective Set membership, planner priority, or execution order.
+
+See `docs/build_plan_explanation_architecture.md`.
 
 ## Canonical Boundaries
 
-### Identity
-
-Canonical SIDs, `BuildingKey` values, and typed objective identities are authoritative identifiers.
-
-Localized names are presentation-only and must never become lookup keys.
-
 ### Query Layer
 
-The Query Layer coordinates backend capabilities and returns deterministic domain contracts while hiding connected backend state.
+The Query Layer remains the only supported application-facing backend boundary.
 
-Application clients must use documented Query Layer operations. Missing capabilities require an additive Query Layer change rather than a direct import of internals.
-
-One application-scoped `PlanningQueryService` serves every active Planning Workspace. The Query Layer remains unaware of workspace identity, collection membership, display ordering, and comparison presentation.
-
-### Scenario state
-
-`PlanningScenario` is immutable single-town starting-state input. It never mutates canonical parsed data.
-
-The Query Layer resolves effective starting state; the planner remains scenario-independent.
-
-The future aggregate scenario described by the roadmap will own towns and shared economy. It must not be conflated with the existing `PlanningScenario` starting-state contract.
-
-### Multi-objective ownership
-
-The target ownership hierarchy is:
-
-```text
-Scenario
-    owns Towns
-
-Town
-    owns ObjectiveSet
-
-ObjectiveSet
-    owns Objective values
-
-TownPlanningRequest
-    owns one TownState
-    owns one ObjectiveSet
-
-Planner
-    consumes TownPlanningRequest
-
-Planner
-    returns MultiObjectivePlannerResult
-```
-
-For Sprint 18, one town request contains one faction, one starting date, one immutable `PlanningScenario`, and one immutable `ObjectiveSet`.
-
-Future multi-town planning composes multiple town requests under a scenario-level shared-economy scheduler.
+Application clients consume immutable explanation models through accepted BE-016
+operations. Missing facts require an additive Query Layer change rather than
+presentation inference.
 
 ### Planning Workspace
 
-The Planning Workspace is application orchestration, not a planner-domain subsystem.
+The workspace owns semantic planning intent, result lifecycle, and revision state.
 
-ARCH-022 supersedes the earlier single-target selection rule. Each complete town planning selection owns one immutable `TownPlanningRequest`.
+The presenter owns transient explanation selection and panel lifecycle.
 
-Automatic execution and stale-result handling remain above the Query Layer.
-
-Every workspace owns an independent selection revision, accepted-result revision, pending state, retained-result state, and failure state.
-
-
-### Objective intent versus execution strategy
-
-`ObjectiveSet` expresses desired end state only.
-
-It never specifies construction sequence or priority. The planner alone chooses
-the deterministic legal execution order from canonical prerequisites, starting
-state, construction constraints, economy, and documented tie-breaking.
-
-UI selection order and Objective Set iteration order must not become planning
-priority. Future ordering constraints, deadlines, or priorities require separate
-typed contracts.
-
-### Multi-objective planning
-
-`Objective` is an explicit closed tagged union of supported immutable objective variants.
-
-The initial supported variant is `BuildingCompletionObjective`. An upgraded building uses the canonical upgraded `BuildingKey`. Future deterministic variants are additive but must define canonical identity, compatibility, completion, provenance, diagnostics, and resource semantics.
-
-One town plan is generated for one immutable `ObjectiveSet`.
-
-The planner solves the union of prerequisite closures for all objectives, removes duplicated graph nodes, applies shared starting-state semantics once, and emits one integrated legal build schedule.
-
-Every scheduled build step exposes reverse objective provenance:
-
-```text
-Marketplace
-    required_by:
-        Treasury
-        Resource Silo
-```
-
-Single-target planning remains a compatibility case represented by a one-member `ObjectiveSet`.
-
-See `docs/multi_objective_planning_architecture.md`.
-
-### Scenario comparison
-
-Scenario comparison composes independent Planning Workspaces.
-
-Each workspace has stable application identity, independent revisions, and an independent accepted-result lifecycle. No workspace may mutate or invalidate another workspace.
-
-Comparison consumes immutable accepted-result snapshots. It must not:
-
-- create a second planner implementation;
-- share mutable workspace lifecycle state;
-- treat retained previous results as current;
-- reproduce planner or comparison algorithms in presenters;
-- infer recommendations or rankings.
-
-The initial detailed comparison selects exactly two current-ready workspaces with explicit left and right roles.
-
-### Planner localization
-
-The existing localization parser retains its current document parsing and
-duplicate-key validation semantics.
-
-Planner-facing display names are owned by an immutable
-`PlannerLocalizationCatalog`. The catalog indexes only canonical planner-visible
-entities from explicit localization sources and applies deterministic fallback:
-
-```text
-localized planner name
-    ↓ if unavailable
-canonical game-data display name
-    ↓ if unavailable
-canonical identifier
-```
-
-The Query Layer owns the catalog and exposes display-ready strings. Presenters
-and views never parse localization, read localization paths, or maintain raw
-token dictionaries.
-
-See `docs/planner_localization_architecture.md`.
+An explanation for a retained previous result must never be represented as
+current for a newer planning request.
 
 ### Presentation
 
 Presenters coordinate application state and Query Layer calls.
 
-Workspace presenters remain partitioned by workspace identity. A comparison presenter consumes immutable collection and accepted-result snapshots.
+They may format and group immutable explanation facts but never calculate
+prerequisites, provenance, costs, unlocks, income, or diagnostics.
 
-Views own widgets and interaction mechanics. Formatting remains pure presentation behavior.
+Views remain passive and interaction-independent.
 
 ## Design Principles
 
 1. Canonical identifiers are authoritative.
-2. Localization is presentation-only.
-3. Parsers are reusable and path-agnostic.
-4. `paths.py` is the only backend module aware of repository layout.
-5. Every behavior change requires executable validation where practical.
-6. Query Layer operations are deterministic for identical data and inputs.
-7. The planner remains independent of UI lifecycle and scenario-document persistence.
-8. Player intent is modeled semantically rather than as checkbox state.
-9. Multi-base planning is an N-base workspace, not a special two-base planner.
-10. New infrastructure is introduced only for measured or approved needs.
-11. Scenario comparison composes isolated workspaces over one authoritative planner.
-12. Workspace identity and selection revision jointly determine result ownership.
-13. Comparison operates on current accepted results rather than live controls or retained historical output.
-14. Planner localization is an immutable Query Layer dependency, not canonical identity.
-15. Existing localization-parser duplicate validation remains unchanged.
-16. Planner localization indexes explicit planner entities rather than scanning unrelated interface resources.
-17. `Objective` is a typed planning-domain union, not an alias for `BuildingKey`.
-18. A planner consumes one immutable `TownPlanningRequest` that owns one `ObjectiveSet`.
-19. Shared prerequisites appear once in one integrated dependency graph and schedule.
-20. Every build step preserves reverse objective provenance.
-21. Validation and infeasibility use explicit typed contracts.
-22. Single-target planning is preserved as a one-objective compatibility adapter.
-23. Future multi-town planning composes town-owned objective sets under a scenario scheduler rather than embedding shared-economy state in the single-town planner.
-24. Objective Set order never specifies execution order; the planner owns execution strategy.
+2. Localization is presentation-only and Query Layer-owned.
+3. Query Layer operations are deterministic for identical canonical inputs.
+4. The planner remains independent of UI lifecycle.
+5. Player intent and explanation selection are semantic rather than control state.
+6. Views remain passive.
+7. Presenters own transient selection and lifecycle, not planner reasoning.
+8. Build-step selection is revision-bound and stale-safe.
+9. Current and retained explanations are explicitly distinguishable.
+10. Remaining construction requirements must not be mislabeled as player inventory.
+11. Multi-town explanation extends owner identity and immutable facts without redesigning the presenter/view boundary.
+12. Future optimization rationale must be backend-owned and must not be invented by presentation.
 
 ## Primary Documentation
 
 - `docs/query_layer.md`
-- `docs/desktop_application_architecture.md`
-- `docs/scenario_planning_architecture.md`
 - `docs/planning_workspace_architecture.md`
+- `docs/multi_objective_planning_architecture.md`
+- `docs/build_plan_explanation_architecture.md`
 - `docs/scenario_comparison_architecture.md`
 - `docs/planner_localization_architecture.md`
-- `docs/multi_objective_planning_architecture.md`
 - `docs/project_management_principles.md`
 - `docs/team_handoff_protocol.md`
