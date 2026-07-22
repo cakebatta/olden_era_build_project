@@ -50,7 +50,8 @@ Desktop Views
 - `scenario.py` — immutable hypothetical starting-state contracts.
 - economy and diagnostic modules — deterministic analysis and canonical failure information.
 - `query.py` — stable application-facing backend boundary.
-- `localization.py` — canonical identifier to display-text support.
+- `localization.py` — existing localization-document parsing and duplicate-key validation.
+- `planner_localization.py` — planner-scoped display-name indexing and deterministic fallback.
 
 ## Application Architecture
 
@@ -120,6 +121,29 @@ Comparison consumes immutable accepted-result snapshots. It must not:
 
 The initial detailed comparison selects exactly two current-ready workspaces with explicit left and right roles.
 
+### Planner localization
+
+The existing localization parser retains its current document parsing and
+duplicate-key validation semantics.
+
+Planner-facing display names are owned by an immutable
+`PlannerLocalizationCatalog`. The catalog indexes only canonical planner-visible
+entities from explicit localization sources and applies deterministic fallback:
+
+```text
+localized planner name
+    ↓ if unavailable
+canonical game-data display name
+    ↓ if unavailable
+canonical identifier
+```
+
+The Query Layer owns the catalog and exposes display-ready strings. Presenters
+and views never parse localization, read localization paths, or maintain raw
+token dictionaries.
+
+See `docs/planner_localization_architecture.md`.
+
 ### Presentation
 
 Presenters coordinate application state and Query Layer calls.
@@ -143,6 +167,9 @@ Views own widgets and interaction mechanics. Formatting remains pure presentatio
 11. Scenario comparison composes isolated workspaces over one authoritative planner.
 12. Workspace identity and selection revision jointly determine result ownership.
 13. Comparison operates on current accepted results rather than live controls or retained historical output.
+14. Planner localization is an immutable Query Layer dependency, not canonical identity.
+15. Existing localization-parser duplicate validation remains unchanged.
+16. Planner localization indexes explicit planner entities rather than scanning unrelated interface resources.
 
 ## Primary Documentation
 
@@ -151,5 +178,6 @@ Views own widgets and interaction mechanics. Formatting remains pure presentatio
 - `docs/scenario_planning_architecture.md`
 - `docs/planning_workspace_architecture.md`
 - `docs/scenario_comparison_architecture.md`
+- `docs/planner_localization_architecture.md`
 - `docs/project_management_principles.md`
 - `docs/team_handoff_protocol.md`

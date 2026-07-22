@@ -158,12 +158,6 @@ The presenter caches localized text and suppresses view updates when the full im
 
 ## Sprint 15 Scenario Comparison Composition
 
-The BE-012 composition root constructs one `ScenarioComparisonCollection` and
-one `ScenarioComparisonExecutionCoordinator` around the existing
-application-scoped `PlanningQueryService`. Presenters resolve workspaces by
-`WorkspaceId` and do not construct their own backend services.
-
-
 ARCH-020 composes multiple complete Planning Workspace instances under one application-scoped `ScenarioComparisonCollection`.
 
 Each workspace has a stable opaque `WorkspaceId` and independently owns:
@@ -517,4 +511,57 @@ longer exists, the panel transitions to comparison unavailable.
 
 The comparison view is passive and owns only layout, typography, row styling,
 keyboard focus, and scrolling.
+
+## Sprint 17 Planner Localization
+
+Planner-facing display names are supplied by the Query Layer through the
+immutable `PlannerLocalizationCatalog` defined in
+`docs/planner_localization_architecture.md`.
+
+The application composition root constructs one canonical
+`PlanningQueryService` with one planner localization catalog for the configured
+language. Workspace and comparison presenters share that service.
+
+Presenters request display-ready text through stable Query Layer operations for
+factions, buildings, units, upgrades, recruitment entries, and planner-visible
+milestones. They do not import the localization parser, catalog builder,
+repository paths, source manifests, or raw token maps.
+
+Presentation models contain both canonical identity where interaction requires
+it and display-ready strings where rendering requires them. Localized text never
+replaces `BuildingKey`, unit SID, faction SID, `WorkspaceId`, or another
+canonical application identity.
+
+Views receive strings only. They do not perform lookup, fallback, source
+selection, file access, or key normalization.
+
+Catalog fallback is authoritative and ordered:
+
+```text
+localized planner name
+canonical game-data display name
+canonical identifier
+```
+
+The desktop must not scan the complete localization directory during startup.
+The catalog is eagerly built from canonical planner entities and explicit
+planner localization sources before presenters are created.
+
+Changing language requires a new immutable catalog and refreshed immutable
+presentation models. It must not mutate planner state, persisted scenarios,
+accepted results, or comparison identities.
+
+UI-011 may resume after BE-014 provides the catalog and Query Layer operations.
+
+### Localization validation
+
+Desktop validation must confirm:
+
+- presenters use only Query Layer display-name operations;
+- views receive display-ready strings;
+- no presenter or view reads localization files;
+- no localized string is used as canonical selection identity;
+- missing text follows catalog fallback;
+- changing localization configuration does not alter planner output;
+- complete planner startup does not parse unrelated interface resources.
 

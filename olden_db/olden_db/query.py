@@ -13,9 +13,9 @@ from .database import LoadedGameData, load_default_game_data
 from .decision_summary import DecisionSummary, summarize_plan_comparison
 from .graph import DependencyGraph, build_dependency_graph, iter_topological_orders
 from .income_timeline import calculate_income_timeline
-from .localization import LocalizationCatalog, parse_localization_file
+from .localization import LocalizationCatalog, parse_localization_directory
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
-from .paths import require_english_cities_localization_file
+from .paths import require_english_localization_directory
 from .planner import (
     BuildPlan,
     GameDate,
@@ -60,14 +60,36 @@ class PlanningQueryService:
         """Create a ready-to-use service from the canonical game data."""
         return cls(
             load_default_game_data(),
-            parse_localization_file(
-                require_english_cities_localization_file(),
+            parse_localization_directory(
+                require_english_localization_directory(),
                 language="english",
             ),
         )
 
     def list_factions(self) -> tuple[str, ...]:
         return tuple(sorted(self._data.cities.cities))
+
+    def get_faction_display_text(self, faction: str) -> str:
+        city = self._get_city(faction)
+        if self._localization is None:
+            return faction
+        for candidate in (city.city_id, faction):
+            if candidate and self._localization.contains(candidate):
+                return self._localization.get(candidate)
+        return faction
+
+    def get_unit_display_text(self, unit_sid: str) -> str:
+        definition = self._data.units.get(unit_sid)
+        if self._localization is None:
+            return definition.sid
+        return self._localization.resolve(definition.sid, fallback=definition.sid) or definition.sid
+
+    def list_faction_unit_display_texts(self, faction: str) -> tuple[tuple[int, str, str], ...]:
+        self._get_city(faction)
+        return tuple(
+            (definition.tier, definition.sid, self.get_unit_display_text(definition.sid))
+            for definition in self._data.units.faction_units(faction)
+        )
 
     def list_buildings(self, faction: str) -> tuple[str, ...]:
         city = self._get_city(faction)
@@ -108,9 +130,9 @@ class PlanningQueryService:
             building.sid,
             building.level,
         )
-        if self._localization is None:
-            raise QueryError("localization is not configured for this query service")
         fallback = definition.name_key or building.sid
+        if self._localization is None:
+            return fallback
         return self._localization.resolve(
             definition.name_key,
             fallback=fallback,

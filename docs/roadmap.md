@@ -15,9 +15,11 @@ GitHub is the canonical source of truth for project scope, architecture, impleme
 - Project structure and canonical data models
 - Building and unit parsers
 - Dependency graph and deterministic planner
-- Localization and database integration
+- Existing localization parser and database integration
 - Public Query Layer
 - Responsive desktop planning, comparison, and economy workspaces
+- Interactive Planning Workspace
+- Scenario Comparison Workspace and accepted-plan comparison boundary
 - Recruitment, town-income, and ResourceLedger integration
 - Scenario persistence product specification and certified implementation
 - Persistent desktop scenario manager
@@ -26,83 +28,82 @@ GitHub is the canonical source of truth for project scope, architecture, impleme
 
 ## Current milestone
 
-Sprint 11 — Scenario Management is complete.
+Sprint 17 — Presentation Infrastructure establishes planner-facing localization
+before UI-011 resumes.
 
-The current application baseline includes certified persistence, a persistent scenario library, protected dirty-state handling, immutable scenario documents, conflict-safe repository operations, and regeneration through the public Query Layer.
+The current application baseline includes deterministic planning, persistent
+planning summaries, scenario comparison, canonical scenario persistence, and
+Query Layer-owned building display text.
 
-These contracts are considered stable foundations for future work.
+ARCH-021 defines the next presentation-infrastructure boundary:
+`PlannerLocalizationCatalog`.
 
 ## Planned roadmap
 
 | Sprint | Theme | Status |
 |---|---|---|
-| 12 | User Workflow and Planner Experience | Planned |
-| 13 | Scenario Comparison Engine | Planned |
-| 15 | Optimization Engine | Planned |
-| 16 | Combat Analysis Tools | Planned optional module |
+| 17 | Presentation Infrastructure | In progress |
+| 18 | Planner UX continuation | Planned |
+| 19 | Deterministic optimization review | Planned |
+| 20 | Combat Analysis Tools | Planned optional module |
 
-Sprint 14 and the former open-ended Sprint 17+ expansion category have been removed from the roadmap because they fall outside the intended scope of the project.
+Sprint numbering follows current authorized work orders. Earlier roadmap sprint
+labels remain historical and do not override current Project Management
+authorization.
 
-## Sprint 12 — User Workflow and Planner Experience
+## Sprint 17 — Presentation Infrastructure
 
 ### Goal
 
-Improve the usability, clarity, and presentation of the existing planner without redesigning its underlying planning architecture.
+Provide one authoritative planner-facing localization source without changing
+canonical identity, planner behavior, or existing localization-parser semantics.
 
-This sprint should make the application feel like a polished desktop product while preserving the existing Query Layer, persistence, parser, planner, and ownership boundaries.
+### Authorized architecture
 
-### Candidate work
+ARCH-021 introduces an immutable `PlannerLocalizationCatalog`.
 
-- Improve the Scenario Library
-- Add scenario search, filtering, and sorting
-- Support recent scenarios
-- Support favorite or pinned scenarios
-- Improve Build Plan presentation
-- Improve Resource Ledger presentation
-- Improve Income Timeline presentation
-- Improve navigation between planner workspaces
-- Refine desktop workflows and general usability
-- Improve empty, loading, validation, and error states where needed
+The catalog:
+
+- indexes only planner-visible canonical entities;
+- uses explicit planner localization sources;
+- avoids complete localization-directory scans;
+- supplies deterministic faction, building, unit, upgrade, recruitment, and milestone display names;
+- applies localized-name, canonical-display-name, then canonical-identifier fallback;
+- is owned by the Query Layer;
+- remains hidden from presenters and views.
+
+### Follow-on implementation
+
+BE-014 implements the catalog and Query Layer operations.
+
+UI-011 resumes only after BE-014 is accepted.
 
 ### Constraints
 
-- Avoid unnecessary backend redesign.
-- Do not duplicate Query Layer responsibilities in the UI.
-- Preserve immutable scenario and persistence contracts.
-- Keep deterministic behavior and test coverage.
+- Existing duplicate-key validation remains unchanged.
+- No first-file-wins or last-file-wins behavior.
+- No handwritten game-name dictionaries.
+- No UI-owned localization.
+- No raw localization storage exposed through Query Layer APIs.
+- Persisted scenarios continue to store canonical identity.
+- Localization does not alter planner or comparison output.
 
-## Sprint 13 — Scenario Comparison Engine
+## Planner UX continuation
 
-### Goal
+After BE-014 acceptance, planner presentation work may:
 
-Allow users to compare two persisted or active scenarios directly.
+- render faction display names;
+- render building and upgrade display names;
+- render unit and recruitment display names;
+- render planner-visible milestone labels;
+- support additional languages through catalog data and source policy;
+- continue UI-011 without another localization-ownership redesign.
 
-The comparison feature should make meaningful planning differences visible without requiring users to inspect two scenarios manually.
+Presentation features must continue to use immutable models and passive views.
 
-### Candidate comparisons
+## Deterministic optimization direction
 
-- Completion dates
-- Build-order differences
-- Resource expenditures
-- Resource income
-- Resource surpluses and deficits
-- Recruitment differences
-- Economic differences
-- Milestone timing
-- Other deterministic outputs already owned by the Query Layer
-
-### Constraints
-
-- Build on Scenario Management and persistence rather than introducing a parallel scenario model.
-- Derive comparison results from public application services.
-- Keep presentation separate from comparison logic.
-- Do not persist derived comparison results unless a later specification explicitly requires it.
-
-## Sprint 15 — Optimization Engine
-
-### Goal
-
-Extend the planner from answering:
+Future optimization may extend the planner from answering:
 
 > Can this plan be completed?
 
@@ -110,116 +111,35 @@ toward answering:
 
 > What is the best valid plan under the selected objective and constraints?
 
-### Candidate optimization goals
+Candidate deterministic objectives include:
 
-- Fastest completion
-- Minimum gold expenditure
-- Minimum rare-resource expenditure
-- Maximum economic growth
-- Maximum army growth
-- User-defined deterministic constraints
+- fastest completion;
+- minimum gold expenditure;
+- minimum rare-resource expenditure;
+- maximum economic growth;
+- maximum army growth;
+- explicit user-defined deterministic constraints.
 
-### Constraints
+Optimization must build on the existing parser, canonical models, planner, Query
+Layer, and planner-localization presentation boundary. It must not create a
+separate competing planner architecture.
 
-- Optimization must build on the existing parser, graph, planner, and Query Layer.
-- It must not replace the deterministic planning engine with a separate competing architecture.
-- Optimization objectives and constraints must be explicit and testable.
-- Stochastic map income and other random external inputs remain outside scope.
+## Combat Analysis Tools
 
-## Sprint 16 — Combat Analysis Tools
+Combat analysis remains an optional module separate from the core town-planning workflow.
 
-### Position in the product
+It may share canonical game data, Query Layer conventions, and the Planner
+Localization Catalog for planner-visible canonical units where appropriate.
+Combat algorithms remain logically independent from planning.
 
-Sprint 16 is an optional module separate from the core town-planning workflow.
+Candidate tools remain:
 
-It may share canonical game data, common UI infrastructure, and established application conventions, but it must remain logically independent from the planning engine. Combat-analysis code should not create new responsibilities for scenario persistence or town-planning services.
+- attack and defense scaling explorer;
+- effective hit point calculator;
+- unit comparator.
 
-The module is intentionally narrow and contains three planned tools.
-
-### CA-001 — Attack and Defense Scaling Explorer
-
-Provide an interactive view of the game's raw attack-versus-defense scaling.
-
-#### Inputs
-
-- Attacker Attack
-- Defender Defense
-- Optional positive or negative stat adjustments
-
-#### Outputs
-
-- Effective Attack and Defense values
-- Attack/Defense difference
-- Damage multiplier produced by the game's scaling rule
-- Clear presentation of how additional or reduced Attack and Defense change the result
-
-Optional graphing may be added when it materially improves understanding.
-
-### CA-002 — Effective Hit Point Calculator
-
-Calculate the effective durability of a unit after combining unit statistics, hero statistics, and temporary positive or negative modifiers.
-
-#### Inputs
-
-- Unit base Attack
-- Unit base Defense
-- Hero Attack
-- Hero Defense
-- Added Attack or Defense
-- Subtracted Attack or Defense
-- Unit hit points or stack hit points, as required by the final specification
-
-Negative adjustments are required because some spells and effects reduce Attack or Defense.
-
-#### Outputs
-
-- Final Attack
-- Final Defense
-- Effective hit points
-- Relative durability compared with the unmodified unit
-- Percentage increase or decrease in durability
-- The effect of adding or subtracting Attack and Defense
-
-The exact EHP baseline and formula must be defined explicitly before implementation and covered by tests.
-
-### CA-003 — Unit Comparator
-
-Compare two units directly in both attack directions.
-
-#### Inputs for each unit
-
-- Base Attack
-- Base Defense
-- Hero Attack
-- Hero Defense
-- Added or subtracted Attack
-- Added or subtracted Defense
-- Base damage or damage range
-- Any other deterministic input required by the game's confirmed damage formula
-
-#### Outputs
-
-For Unit A attacking Unit B:
-
-- Effective Attack/Defense difference
-- Damage multiplier
-- Resulting damage or damage range
-
-For Unit B attacking Unit A:
-
-- Effective Attack/Defense difference
-- Damage multiplier
-- Resulting damage or damage range
-
-The comparison should clearly show how much damage each unit deals to and takes from the other based on their final Attack, Defense, and base damage values.
-
-### Combat-module constraints
-
-- Use confirmed game formulas only.
-- Keep raw formula logic separate from presentation.
-- Reuse canonical unit data where appropriate.
-- Do not turn the module into a complete battle simulator.
-- Do not add movement, initiative, morale, luck, battlefield positioning, spell simulation, AI, or stochastic combat systems unless separately approved in a future roadmap revision.
+The module must use confirmed formulas, keep algorithms separate from
+presentation, and avoid becoming a complete battle simulator.
 
 ## Version 1 scope
 
@@ -227,37 +147,38 @@ Version 1 centers on deterministic town planning and closely related analysis.
 
 Core scope includes:
 
-- Town building prerequisites
-- Legal build orders
-- Construction timing
-- Resource costs and income
-- Recruitment costs and timing
-- Build plans
-- Resource ledgers
-- Income timelines
-- Scenario persistence and management
-- Scenario comparison
-- Deterministic optimization
-- The optional, narrowly scoped Combat Analysis Tools module
+- town building prerequisites;
+- legal build orders;
+- construction timing;
+- resource costs and income;
+- recruitment costs and timing;
+- build plans;
+- resource ledgers;
+- income timelines;
+- scenario persistence and management;
+- scenario comparison;
+- planner-facing localization;
+- deterministic optimization;
+- optional narrowly scoped Combat Analysis Tools.
 
 ## Out of scope
 
-The following categories are intentionally excluded from the current roadmap:
+The following categories remain excluded unless separately authorized:
 
-- What-if analysis as a separate sprint category
-- Hero movement simulation
-- Multiple-town planning
-- Map exploration
-- Random map income
-- Mines and external map-object simulation
-- Artifact management
-- Campaign systems
-- Multiplayer planning
-- Save-game import
-- AI gameplay
-- Full combat simulation
-- General-purpose Heroes companion functionality
-- Open-ended advanced gameplay expansion
+- general-purpose game localization;
+- planner parsing of all interface localization resources;
+- hero movement simulation;
+- map exploration;
+- random map income;
+- mines and external map-object simulation;
+- artifact management;
+- campaign systems;
+- multiplayer planning;
+- save-game import;
+- AI gameplay;
+- full combat simulation;
+- general-purpose Heroes companion functionality;
+- open-ended advanced gameplay expansion.
 
 These are product boundaries, not missing requirements.
 
@@ -265,17 +186,19 @@ These are product boundaries, not missing requirements.
 
 Future work must preserve:
 
-- deterministic behavior
-- canonical SIDs
-- localization as presentation
-- reusable, path-agnostic parsers
-- repository-layout ownership in `paths.py`
-- immutable public contracts where established
-- Query Layer ownership of application analysis
-- persistence ownership boundaries
-- conflict-safe scenario operations
-- explicit validation
-- comprehensive automated tests
-- repository-first documentation
+- deterministic behavior;
+- canonical SIDs and typed canonical identities;
+- localization as presentation;
+- unchanged existing localization-parser semantics;
+- planner-scoped explicit localization indexing;
+- reusable, path-agnostic parsers;
+- repository-layout ownership in `paths.py`;
+- immutable public contracts where established;
+- Query Layer ownership of application analysis and display-name access;
+- persistence ownership boundaries;
+- conflict-safe scenario operations;
+- explicit validation;
+- comprehensive automated tests;
+- repository-first documentation.
 
 Every sprint should leave the project more stable, more maintainable, better documented, and less dependent on conversation history.

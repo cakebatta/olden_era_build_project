@@ -22,6 +22,7 @@ from olden_db.scenario import (
     StartingBuildingOverride,
 )
 
+from ..display_names import CanonicalDisplayOption, StartingBuildingPresentation
 from ..formatting import (
     format_diagnostic_summary,
     format_faction_status,
@@ -48,8 +49,8 @@ SCENARIO_ERRORS = (
 
 class PlannerViewContract(Protocol):
     def set_event_handlers(self, **handlers) -> None: ...
-    def set_factions(self, factions: tuple[str, ...]) -> None: ...
-    def set_buildings(self, buildings: tuple[str, ...]) -> None: ...
+    def set_factions(self, factions: tuple[CanonicalDisplayOption, ...]) -> None: ...
+    def set_buildings(self, buildings: tuple[CanonicalDisplayOption, ...]) -> None: ...
     def set_levels(self, levels: tuple[int, ...]) -> None: ...
     def clear_building_selection(self) -> None: ...
     def clear_level_selection(self) -> None: ...
@@ -58,7 +59,7 @@ class PlannerViewContract(Protocol):
     def set_selection_values(self, faction: str, sid: str, level: int) -> None: ...
     def set_starting_buildings(
         self,
-        buildings: tuple[BuildingLevel, ...],
+        buildings: tuple[StartingBuildingPresentation, ...],
         scenario: PlanningScenario,
     ) -> None: ...
     def clear_starting_buildings(self) -> None: ...
@@ -94,6 +95,7 @@ class PlannerPresenter:
             PlanningWorkspacePresentation | None
         ) = None
         self._display_text_cache: dict[BuildingKey, str] = {}
+        self._faction_text_cache: dict[str, str] = {}
 
     def initialize(self) -> None:
         self._view.set_event_handlers(
@@ -106,7 +108,7 @@ class PlannerPresenter:
             on_reset_scenario=self.on_reset_scenario,
         )
         factions = self._service.list_factions()
-        self._view.set_factions(factions)
+        self._view.set_factions(self._faction_options(factions))
         self._view.clear_building_selection()
         self._view.clear_level_selection()
         self._view.clear_starting_buildings()
@@ -126,12 +128,12 @@ class PlannerPresenter:
             self._show_discovery_error(exc)
             return
         self._state.select_faction(faction, candidates)
-        self._view.set_buildings(sids)
-        self._view.set_starting_buildings(candidates, self._state.active_scenario)
+        self._view.set_buildings(self._building_options(faction, sids))
+        self._view.set_starting_buildings(self._starting_building_presentations(candidates), self._state.active_scenario)
         self._view.set_planning_mode(0)
         self._selection_became_incomplete()
         self._on_context_changed()
-        self._set_status(f"Faction selected: {faction}. Select a building.")
+        self._set_status(f"Faction selected: {self._faction_display(faction)}. Select a building.")
 
     def on_building_changed(self, sid: str) -> None:
         faction = self._state.selected_faction
@@ -148,7 +150,7 @@ class PlannerPresenter:
         self._view.set_levels(levels)
         self._selection_became_incomplete()
         self._on_context_changed()
-        self._set_status(f"Building selected: {sid}. Select a level.")
+        self._set_status(f"Building selected: {self._building_family_display(faction, sid)}. Select a level.")
 
     def on_level_changed(self, level: int) -> None:
         if (
@@ -206,7 +208,7 @@ class PlannerPresenter:
             self._show_discovery_error(exc)
             return
         self._state.replace_scenario(scenario)
-        self._view.set_starting_buildings(self._state.scenario_candidates, scenario)
+        self._view.set_starting_buildings(self._starting_building_presentations(self._state.scenario_candidates), scenario)
         self._view.set_planning_mode(self._state.override_count)
         self._on_context_changed()
         self._submit_current_selection()
@@ -216,7 +218,7 @@ class PlannerPresenter:
         if scenario == self._state.active_scenario:
             return
         self._state.replace_scenario(scenario)
-        self._view.set_starting_buildings(self._state.scenario_candidates, scenario)
+        self._view.set_starting_buildings(self._starting_building_presentations(self._state.scenario_candidates), scenario)
         self._view.set_planning_mode(0)
         self._on_context_changed()
         self._submit_current_selection()
@@ -252,11 +254,11 @@ class PlannerPresenter:
         self._state.select_level(level)
         self._state.starting_date = starting_date
         self._state.replace_scenario(scenario)
-        self._view.set_buildings(sids)
+        self._view.set_buildings(self._building_options(faction, sids))
         self._view.set_levels(levels)
         self._view.set_selection_values(faction, sid, level)
         self._view.set_starting_date(starting_date)
-        self._view.set_starting_buildings(candidates, scenario)
+        self._view.set_starting_buildings(self._starting_building_presentations(candidates), scenario)
         self._view.set_planning_mode(self._state.override_count)
         self._on_context_changed()
         self._submit_current_selection()
@@ -277,7 +279,7 @@ class PlannerPresenter:
         self._state.select_level(selection.target.level)
         self._state.starting_date = selection.starting_date
         self._state.replace_scenario(selection.scenario)
-        self._view.set_buildings(sids)
+        self._view.set_buildings(self._building_options(selection.faction, sids))
         self._view.set_levels(levels)
         self._view.set_selection_values(
             selection.faction,
@@ -285,7 +287,7 @@ class PlannerPresenter:
             selection.target.level,
         )
         self._view.set_starting_date(selection.starting_date)
-        self._view.set_starting_buildings(candidates, selection.scenario)
+        self._view.set_starting_buildings(self._starting_building_presentations(candidates), selection.scenario)
         self._view.set_planning_mode(self._state.override_count)
 
     def render_workspace_snapshot(
@@ -347,7 +349,7 @@ class PlannerPresenter:
             else None
         )
         selection = base.selection
-        faction_text = selection.faction if selection is not None else self._state.selected_faction
+        faction_text = (self._faction_display(selection.faction) if selection is not None else (self._faction_display(self._state.selected_faction) if self._state.selected_faction else None))
         target_text = self._display_text(selection.target) if selection is not None else None
         starting_date_text = (
             format_game_date(selection.starting_date)
@@ -358,7 +360,7 @@ class PlannerPresenter:
         selection_summary = (
             missing_inputs
             if selection is None
-            else f"{selection.faction} / {target_text} / starts {starting_date_text}"
+            else f"{faction_text} / {target_text} / starts {starting_date_text}"
         )
         retained = base.retains_previous_result
         summary = self._build_summary(
@@ -428,6 +430,56 @@ class PlannerPresenter:
         if result is not None:
             return adapt_planner_diagnostics(result.diagnostics)
         return ()
+
+    def _faction_options(
+        self,
+        factions: tuple[str, ...],
+    ) -> tuple[CanonicalDisplayOption, ...]:
+        return tuple(
+            CanonicalDisplayOption(item, self._faction_display(item))
+            for item in factions
+        )
+
+    def _building_options(
+        self,
+        faction: str,
+        sids: tuple[str, ...],
+    ) -> tuple[CanonicalDisplayOption, ...]:
+        return tuple(
+            CanonicalDisplayOption(
+                sid,
+                self._building_family_display(faction, sid),
+            )
+            for sid in sids
+        )
+
+    def _building_family_display(self, faction: str, sid: str) -> str:
+        levels = self._service.list_building_levels(faction, sid)
+        return self._display_text(BuildingKey(faction, sid, levels[0]))
+
+    def _starting_building_presentations(
+        self,
+        buildings: tuple[BuildingLevel, ...],
+    ) -> tuple[StartingBuildingPresentation, ...]:
+        return tuple(
+            StartingBuildingPresentation(
+                building=item.key,
+                display_name=self._display_text(item.key),
+                level_text=str(item.key.level),
+                canonical_state_text=(
+                    "available" if item.constructed_on_start else "must construct"
+                ),
+                constructed_on_start=item.constructed_on_start,
+            )
+            for item in buildings
+        )
+
+    def _faction_display(self, faction: str) -> str:
+        cached = self._faction_text_cache.get(faction)
+        if cached is None:
+            cached = self._service.get_faction_display_text(faction)
+            self._faction_text_cache[faction] = cached
+        return cached
 
     def _display_text(self, key: BuildingKey) -> str:
         cached = self._display_text_cache.get(key)

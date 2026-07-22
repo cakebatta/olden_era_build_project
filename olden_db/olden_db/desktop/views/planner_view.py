@@ -8,6 +8,7 @@ from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
 from olden_db.planner import BuildPlan, GameDate
 from olden_db.scenario import PlanningScenario, PrerequisiteStatus
 
+from ..display_names import CanonicalDisplayOption, StartingBuildingPresentation
 from ..formatting import (
     format_build_plan,
     format_planning_mode,
@@ -40,6 +41,10 @@ class PlannerView(ttk.Frame):
 
         self._faction_var = tk.StringVar()
         self._building_var = tk.StringVar()
+        self._faction_display_to_id: dict[str, str] = {}
+        self._faction_id_to_display: dict[str, str] = {}
+        self._building_display_to_id: dict[str, str] = {}
+        self._building_id_to_display: dict[str, str] = {}
         self._level_var = tk.StringVar()
         self._start_month_var = tk.StringVar(value="1")
         self._start_week_var = tk.StringVar(value="1")
@@ -91,7 +96,7 @@ class PlannerView(ttk.Frame):
         self._faction_selector.grid(row=0, column=1, sticky="w", pady=5)
         self._faction_selector.bind("<<ComboboxSelected>>", self._handle_faction_event)
 
-        ttk.Label(target, text="Building SID").grid(row=1, column=0, sticky="w", padx=(0, 12), pady=5)
+        ttk.Label(target, text="Target Building").grid(row=1, column=0, sticky="w", padx=(0, 12), pady=5)
         self._building_selector = ttk.Combobox(target, textvariable=self._building_var, state="disabled")
         self._building_selector.grid(row=1, column=1, sticky="w", pady=5)
         self._building_selector.bind("<<ComboboxSelected>>", self._handle_building_event)
@@ -406,17 +411,37 @@ class PlannerView(ttk.Frame):
         longest = max((len(value) for value in displayed), default=minimum)
         selector.configure(width=max(minimum, min(maximum, longest + 2)))
 
-    def set_factions(self, factions: tuple[str, ...]) -> None:
-        self._faction_selector.configure(values=factions)
-        self._fit_combobox_to_values(self._faction_selector, factions)
+    def set_factions(
+        self,
+        factions: tuple[CanonicalDisplayOption, ...],
+    ) -> None:
+        self._faction_display_to_id = {
+            item.display_name: item.canonical_id for item in factions
+        }
+        self._faction_id_to_display = {
+            item.canonical_id: item.display_name for item in factions
+        }
+        values = tuple(item.display_name for item in factions)
+        self._faction_selector.configure(values=values)
+        self._fit_combobox_to_values(self._faction_selector, values)
 
-    def set_buildings(self, buildings: tuple[str, ...]) -> None:
+    def set_buildings(
+        self,
+        buildings: tuple[CanonicalDisplayOption, ...],
+    ) -> None:
         self._building_var.set("")
+        self._building_display_to_id = {
+            item.display_name: item.canonical_id for item in buildings
+        }
+        self._building_id_to_display = {
+            item.canonical_id: item.display_name for item in buildings
+        }
+        values = tuple(item.display_name for item in buildings)
         self._building_selector.configure(
-            values=buildings,
-            state="readonly" if buildings else "disabled",
+            values=values,
+            state="readonly" if values else "disabled",
         )
-        self._fit_combobox_to_values(self._building_selector, buildings)
+        self._fit_combobox_to_values(self._building_selector, values)
 
     def set_levels(self, levels: tuple[int, ...]) -> None:
         self._level_var.set("")
@@ -454,13 +479,13 @@ class PlannerView(ttk.Frame):
         sid: str,
         level: int,
     ) -> None:
-        self._faction_var.set(faction)
-        self._building_var.set(sid)
+        self._faction_var.set(self._faction_id_to_display.get(faction, faction))
+        self._building_var.set(self._building_id_to_display.get(sid, sid))
         self._level_var.set(str(level))
 
     def set_starting_buildings(
         self,
-        buildings: tuple[BuildingLevel, ...],
+        buildings: tuple[StartingBuildingPresentation, ...],
         scenario: PlanningScenario,
     ) -> None:
         self._clear_scenario_content()
@@ -468,17 +493,19 @@ class PlannerView(ttk.Frame):
             override.building: override.available_at_start
             for override in scenario.starting_building_overrides
         }
-        for row, building in enumerate(buildings):
-            effective = overrides.get(building.key, building.constructed_on_start)
+        for row, item in enumerate(buildings):
+            effective = overrides.get(item.building, item.constructed_on_start)
             variable = tk.BooleanVar(value=effective)
-            self._scenario_vars[building.key] = variable
-            canonical = "available" if building.constructed_on_start else "must construct"
+            self._scenario_vars[item.building] = variable
             ttk.Checkbutton(
                 self._scenario_content,
-                text=f"{building.key.sid} level {building.key.level} — Canonical: {canonical}",
+                text=(
+                    f"{item.display_name} level {item.level_text} — "
+                    f"Canonical: {item.canonical_state_text}"
+                ),
                 variable=variable,
-                command=lambda key=building.key, var=variable: self._handle_starting_building_changed(
-                    key, var.get()
+                command=lambda key=item.building, var=variable: (
+                    self._handle_starting_building_changed(key, var.get())
                 ),
             ).grid(row=row, column=0, sticky="w", pady=2)
 
@@ -905,11 +932,13 @@ class PlannerView(ttk.Frame):
 
     def _handle_faction_event(self, _event: tk.Event[tk.Misc]) -> None:
         if self._on_faction_changed is not None:
-            self._on_faction_changed(self._faction_var.get())
+            display = self._faction_var.get()
+            self._on_faction_changed(self._faction_display_to_id[display])
 
     def _handle_building_event(self, _event: tk.Event[tk.Misc]) -> None:
         if self._on_building_changed is not None:
-            self._on_building_changed(self._building_var.get())
+            display = self._building_var.get()
+            self._on_building_changed(self._building_display_to_id[display])
 
     def _handle_level_event(self, _event: tk.Event[tk.Misc]) -> None:
         if self._on_level_changed is not None:
