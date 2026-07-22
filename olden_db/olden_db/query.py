@@ -15,6 +15,20 @@ from .graph import DependencyGraph, build_dependency_graph, iter_topological_ord
 from .income_timeline import calculate_income_timeline
 from .localization import parse_localization_file
 from .models import BuildingKey, BuildingLevel, FactionCity, ResourceCost
+from .objective_planning import (
+    BuildingCompletionObjective,
+    CrossTownObjectiveError,
+    EmptyObjectiveSetError,
+    IncompatiblePlanningScenarioError,
+    MultiObjectivePlannerResult,
+    ObjectivePlanningFailure,
+    ObjectiveSet,
+    TownPlanningRequest,
+    TownState,
+    UnknownObjectiveTargetError,
+    UnsupportedObjectiveTypeError,
+    plan_objective_request,
+)
 from .paths import require_english_planner_localization_file
 from .planner_localization import (
     PlannerLocalizationCatalog,
@@ -201,6 +215,75 @@ class PlanningQueryService:
             )
         )
 
+    def generate_objective_plan(
+        self,
+        request: TownPlanningRequest,
+    ) -> MultiObjectivePlannerResult | ObjectivePlanningFailure:
+        if not isinstance(request, TownPlanningRequest):
+            raise TypeError("request must be a TownPlanningRequest")
+        if not request.objective_set.objectives:
+            raise EmptyObjectiveSetError("objective_set cannot be empty")
+
+        town_state = request.town_state
+        city = self._get_city(town_state.faction)
+        try:
+            starting_buildings = resolve_effective_starting_buildings(
+                city,
+                town_state.planning_scenario,
+            )
+        except (TypeError, ValueError) as exc:
+            raise IncompatiblePlanningScenarioError(str(exc)) from exc
+
+        for objective in request.objective_set:
+            if not isinstance(objective, BuildingCompletionObjective):
+                raise UnsupportedObjectiveTypeError(
+                    "Unsupported Objective variant",
+                    objectives=(objective,),
+                )
+            building = objective.building
+            if building.faction != town_state.faction:
+                raise CrossTownObjectiveError(
+                    "Objective faction does not match request town",
+                    objectives=(objective,),
+                    affected_entities=(building,),
+                )
+            if building not in city.buildings:
+                raise UnknownObjectiveTargetError(
+                    f"Unknown objective target: {building}",
+                    objectives=(objective,),
+                    affected_entities=(building,),
+                )
+
+        return plan_objective_request(
+            city,
+            request,
+            starting_buildings=starting_buildings,
+        )
+
+    @staticmethod
+    def _single_objective_request(
+        faction: str,
+        sid: str,
+        level: int,
+        *,
+        starting_date: GameDate,
+        scenario: PlanningScenario | None,
+    ) -> TownPlanningRequest:
+        return TownPlanningRequest(
+            TownState(
+                faction=faction,
+                starting_date=starting_date,
+                planning_scenario=PlanningScenario() if scenario is None else scenario,
+            ),
+            ObjectiveSet(
+                (
+                    BuildingCompletionObjective(
+                        BuildingKey(faction=faction, sid=sid, level=level)
+                    ),
+                )
+            ),
+        )
+
     def generate_build_plan(
         self,
         faction: str,
@@ -210,9 +293,16 @@ class PlanningQueryService:
         starting_date: GameDate = GameDate(1, 1, 1),
         scenario: PlanningScenario | None = None,
     ) -> BuildPlan:
-        city, graph = self._build_graph(faction, sid, level, scenario=scenario)
-        order = next(iter_topological_orders(graph))
-        return plan_build_order(city, graph, order, starting_date=starting_date)
+        outcome = self.generate_objective_plan(
+            self._single_objective_request(
+                faction, sid, level,
+                starting_date=starting_date,
+                scenario=scenario,
+            )
+        )
+        if isinstance(outcome, ObjectivePlanningFailure):
+            raise QueryError(f"Single-target planning failed: {outcome.kind.value}")
+        return outcome.plan
 
     def generate_planner_result(
         self,
@@ -223,14 +313,19 @@ class PlanningQueryService:
         starting_date: GameDate = GameDate(1, 1, 1),
         scenario: PlanningScenario | None = None,
     ) -> PlannerResult:
-        """Return the canonical planner result without presentation translation."""
-        city, graph = self._build_graph(faction, sid, level, scenario=scenario)
-        order = next(iter_topological_orders(graph))
-        return plan_build_order_result(
-            city,
-            graph,
-            order,
-            starting_date=starting_date,
+        outcome = self.generate_objective_plan(
+            self._single_objective_request(
+                faction, sid, level,
+                starting_date=starting_date,
+                scenario=scenario,
+            )
+        )
+        if isinstance(outcome, ObjectivePlanningFailure):
+            raise QueryError(f"Single-target planning failed: {outcome.kind.value}")
+        return PlannerResult(
+            plan=outcome.plan,
+            diagnostics=outcome.diagnostics,
+            daily_construction_schedule=outcome.daily_construction_schedule,
         )
 
     def get_cumulative_cost(
