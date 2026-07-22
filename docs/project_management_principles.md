@@ -56,6 +56,48 @@ Repository documentation defines current project standards. Conversation history
 
 When governance records and repository state diverge, Project Management must reconcile the records to the repository.
 
+### Mandatory repository synchronization before every assignment
+
+Before performing any design, implementation, testing, documentation, code review, certification, or related project work, the assigned role shall first synchronize with the current repository documentation on GitHub `main`.
+
+At minimum, the assignee shall review the latest versions of:
+
+- `docs/roadmap.md`;
+- `docs/architecture.md`;
+- `docs/query_layer.md` when the task touches public application contracts;
+- `docs/project_management_principles.md`;
+- the architecture documents relevant to the task;
+- any specifications, implementation reports, or acceptance records referenced by the work order.
+
+The repository is authoritative for:
+
+- current architecture;
+- accepted design decisions;
+- engineering and governance protocols;
+- public contracts;
+- product direction;
+- sprint and implementation status.
+
+Implementation and analysis shall be based on current repository documentation rather than conversation memory whenever the two differ.
+
+If the assignee discovers conflicting, missing, or ambiguous repository documentation that could materially affect the task, work shall pause and the conflict shall be reported before proceeding.
+
+This synchronization is mandatory and is part of task execution, not an optional preparation step.
+
+### Mandatory repository verification before implementation
+
+Before changing behavior or issuing a certification decision, the assigned role shall verify that:
+
+- no newer architectural document supersedes the work order;
+- no accepted implementation has already completed part or all of the requested work;
+- no repository documentation introduces constraints that materially affect the assignment;
+- the referenced files, contracts, and task status still exist as described;
+- the task remains consistent with the current roadmap and accepted architecture.
+
+Assumptions shall not be made from memory when repository documentation is available.
+
+Every work order issued by Project Management shall include these repository-synchronization and repository-verification requirements explicitly. They apply to Architecture, Backend, UI, QA, and any future project role.
+
 ## 4. Governance Enables Delivery
 
 Governance is valuable when it:
@@ -193,6 +235,8 @@ Every assignment must still define:
 - deliverables;
 - ownership;
 - acceptance conditions.
+
+Every assignment must also begin with the mandatory repository synchronization and repository verification protocol defined in Section 3.
 
 Process weight should be proportional to implementation risk.
 
