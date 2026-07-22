@@ -15,6 +15,7 @@ The application models:
 - diagnostics and planning failures;
 - interactive planning workspaces;
 - side-by-side scenario comparison workspaces;
+- immutable multi-objective town planning;
 - localized display names.
 
 It intentionally does not treat random map income or other stochastic map events as canonical planning inputs.
@@ -47,6 +48,7 @@ Desktop Views
 - `database.py` — connected in-memory game data.
 - `graph.py` — dependency graph and legal topological orders.
 - `planner.py` — deterministic build plans, dates, and cumulative costs.
+- objective-planning modules — immutable objective contracts, objective-set validation, dependency union, provenance, typed failures, and objective completion reporting.
 - `scenario.py` — immutable hypothetical starting-state contracts.
 - economy and diagnostic modules — deterministic analysis and canonical failure information.
 - `query.py` — stable application-facing backend boundary.
@@ -57,7 +59,7 @@ Desktop Views
 
 The desktop application is a client of the Query Layer.
 
-It must not invoke parser, database, graph, path, localization, or planner-algorithm internals directly.
+It must not invoke parser, database, graph, path, localization, objective-planning, or planner-algorithm internals directly.
 
 The interactive product uses application-scoped Planning Workspaces. ARCH-019 defines one workspace lifecycle; ARCH-020 composes independent workspaces in a Scenario Comparison Collection:
 
@@ -79,7 +81,7 @@ See `docs/scenario_comparison_architecture.md`.
 
 ### Identity
 
-Canonical SIDs and `BuildingKey` values are authoritative identifiers.
+Canonical SIDs, `BuildingKey` values, and typed objective identities are authoritative identifiers.
 
 Localized names are presentation-only and must never become lookup keys.
 
@@ -93,17 +95,73 @@ One application-scoped `PlanningQueryService` serves every active Planning Works
 
 ### Scenario state
 
-`PlanningScenario` is immutable semantic input. It never mutates canonical parsed data.
+`PlanningScenario` is immutable single-town starting-state input. It never mutates canonical parsed data.
 
 The Query Layer resolves effective starting state; the planner remains scenario-independent.
+
+The future aggregate scenario described by the roadmap will own towns and shared economy. It must not be conflated with the existing `PlanningScenario` starting-state contract.
+
+### Multi-objective ownership
+
+The target ownership hierarchy is:
+
+```text
+Scenario
+    owns Towns
+
+Town
+    owns ObjectiveSet
+
+ObjectiveSet
+    owns Objective values
+
+TownPlanningRequest
+    owns one TownState
+    owns one ObjectiveSet
+
+Planner
+    consumes TownPlanningRequest
+
+Planner
+    returns MultiObjectivePlannerResult
+```
+
+For Sprint 18, one town request contains one faction, one starting date, one immutable `PlanningScenario`, and one immutable `ObjectiveSet`.
+
+Future multi-town planning composes multiple town requests under a scenario-level shared-economy scheduler.
 
 ### Planning Workspace
 
 The Planning Workspace is application orchestration, not a planner-domain subsystem.
 
-Each planning selection contains exactly one canonical target. Automatic execution and stale-result handling occur above the Query Layer.
+ARCH-022 supersedes the earlier single-target selection rule. Each complete town planning selection owns one immutable `TownPlanningRequest`.
+
+Automatic execution and stale-result handling remain above the Query Layer.
 
 Every workspace owns an independent selection revision, accepted-result revision, pending state, retained-result state, and failure state.
+
+### Multi-objective planning
+
+`Objective` is an explicit closed tagged union of supported immutable objective variants.
+
+The initial supported variant is `BuildingCompletionObjective`. An upgraded building uses the canonical upgraded `BuildingKey`. Future deterministic variants are additive but must define canonical identity, compatibility, completion, provenance, diagnostics, and resource semantics.
+
+One town plan is generated for one immutable `ObjectiveSet`.
+
+The planner solves the union of prerequisite closures for all objectives, removes duplicated graph nodes, applies shared starting-state semantics once, and emits one integrated legal build schedule.
+
+Every scheduled build step exposes reverse objective provenance:
+
+```text
+Marketplace
+    required_by:
+        Treasury
+        Resource Silo
+```
+
+Single-target planning remains a compatibility case represented by a one-member `ObjectiveSet`.
+
+See `docs/multi_objective_planning_architecture.md`.
 
 ### Scenario comparison
 
@@ -170,6 +228,13 @@ Views own widgets and interaction mechanics. Formatting remains pure presentatio
 14. Planner localization is an immutable Query Layer dependency, not canonical identity.
 15. Existing localization-parser duplicate validation remains unchanged.
 16. Planner localization indexes explicit planner entities rather than scanning unrelated interface resources.
+17. `Objective` is a typed planning-domain union, not an alias for `BuildingKey`.
+18. A planner consumes one immutable `TownPlanningRequest` that owns one `ObjectiveSet`.
+19. Shared prerequisites appear once in one integrated dependency graph and schedule.
+20. Every build step preserves reverse objective provenance.
+21. Validation and infeasibility use explicit typed contracts.
+22. Single-target planning is preserved as a one-objective compatibility adapter.
+23. Future multi-town planning composes town-owned objective sets under a scenario scheduler rather than embedding shared-economy state in the single-town planner.
 
 ## Primary Documentation
 
@@ -179,5 +244,6 @@ Views own widgets and interaction mechanics. Formatting remains pure presentatio
 - `docs/planning_workspace_architecture.md`
 - `docs/scenario_comparison_architecture.md`
 - `docs/planner_localization_architecture.md`
+- `docs/multi_objective_planning_architecture.md`
 - `docs/project_management_principles.md`
 - `docs/team_handoff_protocol.md`

@@ -35,7 +35,7 @@ The Query Layer is the stable public interface to the backend. It answers planni
 
 ## Responsibilities
 
-The Query Layer may coordinate database, graph, planner, scenario, comparison, decision-summary, recruitment-stock, resource-ledger, diagnostic, and planner-localization modules; validate requests; return deterministic domain objects; and expose canonical discovery information.
+The Query Layer may coordinate database, graph, planner, objective-planning, scenario, comparison, decision-summary, recruitment-stock, resource-ledger, diagnostic, and planner-localization modules; validate requests; return deterministic domain objects; and expose canonical discovery information.
 
 It must not:
 
@@ -115,6 +115,86 @@ canonical identities raise documented Query Layer errors.
 The Query Layer does not change canonical discovery operations to return
 localized identity objects.
 
+## Multi-Objective Planning Interface
+
+ARCH-022 defines one canonical public request contract:
+
+```python
+@dataclass(frozen=True, slots=True)
+class TownPlanningRequest:
+    town_state: TownState
+    objective_set: ObjectiveSet
+```
+
+For the initial single-town implementation, `TownState` conceptually owns:
+
+```text
+faction
+starting_date
+PlanningScenario
+```
+
+The request owns the Objective Set as an immutable field. The planner does not
+accept an unrelated list of targets.
+
+The canonical additive Query Layer operation is:
+
+```text
+generate_objective_plan(
+    request: TownPlanningRequest
+) -> MultiObjectivePlannerResult
+```
+
+Convenience methods may accept the request's fields separately only when they
+immediately construct a `TownPlanningRequest` and delegate to the canonical
+operation. They are adapters, not alternative planner contracts.
+
+The Query Layer guarantees:
+
+- request validation occurs before planning;
+- every objective belongs to the request town;
+- shared prerequisites are solved once;
+- one integrated build schedule is returned;
+- objective completion facts are immutable and canonical;
+- build-step-to-objective provenance is returned;
+- deterministic tie-breaking is documented and stable;
+- localization is not part of request or result identity;
+- typed validation failures remain distinct from typed infeasibility outcomes.
+
+## Objective Interface
+
+`Objective` is a closed tagged union of approved immutable objective variants.
+
+Initial public variant:
+
+```python
+@dataclass(frozen=True, slots=True, order=True)
+class BuildingCompletionObjective:
+    building: BuildingKey
+```
+
+Conceptually:
+
+```text
+Objective
+├── BuildingCompletionObjective
+└── future approved Objective variants
+```
+
+A future objective variant must define:
+
+- canonical identity;
+- total deterministic ordering;
+- town compatibility;
+- prerequisite or schedule contribution;
+- completion predicate;
+- provenance semantics;
+- diagnostic attribution;
+- resource semantics.
+
+No generic string objective, untyped mapping, UI object, or mutable plugin
+registry is part of the public contract.
+
 ## Planning Interface
 
 Supported planning operations include:
@@ -124,6 +204,7 @@ Supported planning operations include:
 - `get_prerequisite_statuses(..., scenario=None) -> tuple[PrerequisiteStatus, ...]`
 - `generate_build_plan(..., scenario=None) -> BuildPlan`
 - `generate_planner_result(..., scenario=None) -> PlannerResult`
+- `generate_objective_plan(request) -> MultiObjectivePlannerResult`
 - `get_cumulative_cost(..., scenario=None) -> ResourceCost`
 - `enumerate_build_orders(..., scenario=None) -> tuple[tuple[BuildingKey, ...], ...]`
 - `compare_plans(...) -> PlanComparison`
@@ -131,21 +212,27 @@ Supported planning operations include:
 - `generate_decision_summary(...) -> DecisionSummary`
 - `generate_resource_ledger(...) -> ResourceLedger`
 
-`generate_build_plan(...)` remains supported for compatibility.
+`generate_build_plan(...)` and `generate_planner_result(...)` remain supported as additive compatibility adapters.
 
-`generate_planner_result(...)` is the preferred planning entry point for application workflows that need the canonical planning result and diagnostics through one deterministic pipeline.
+They are semantically equivalent to constructing a `TownPlanningRequest` with a
+one-member Objective Set containing one `BuildingCompletionObjective`.
 
-When `scenario` is omitted or `None`, planning behavior remains equivalent to canonical planning.
+They must not be removed, change call shape, or produce different one-target
+behavior without separate deprecation architecture.
+
+The preferred new application workflow uses `generate_objective_plan(...)`.
+
+When `PlanningScenario` is empty or omitted, planning remains equivalent to canonical planning.
 
 Localization configuration must not alter any planning result.
 
 ## Planning Workspace Relationship
 
-The Planning Workspace is an application orchestration concept defined in `docs/planning_workspace_architecture.md`.
+The Planning Workspace is application orchestration.
 
-It is not Query Layer state.
+ARCH-022 supersedes the former one-target selection limitation.
 
-The workspace may invoke Query Layer planning operations whenever an immutable planning selection changes. The Query Layer receives ordinary canonical inputs and returns deterministic results or documented failures.
+A complete workspace selection owns one `TownPlanningRequest`.
 
 The Query Layer does not receive:
 
@@ -158,137 +245,208 @@ The Query Layer does not receive:
 
 Continuous replanning, execution timing, and completion acceptance remain application concerns.
 
-Each workspace selection maps to one existing single-target planning request.
-
-A future multi-target operation or combined multi-base aggregation operation must be additive and receive separate architectural approval.
+A future multi-town operation will be additive and separately approved. It will coordinate multiple town requests against one shared economy rather than concatenate independently accepted plans.
 
 ## Scenario Comparison Relationship
 
 Scenario comparison is application collection state.
 
-`compare_accepted_build_plans(...)` compares current accepted planner inputs
-without regenerating plans.
+Existing accepted single-target comparison operations remain public and compatible.
 
-The Query Layer does not receive workspace labels, widget identities, or
-collection presentation state beyond the immutable accepted inputs required by
-the comparison contract.
+Objective-set comparison requires a later additive contract because objective membership, objective completion timing, and provenance introduce new comparison dimensions.
+
+ARCH-022 does not alter existing comparison APIs.
 
 ## Scenario-Aware Planning
 
 `PlanningScenario` is immutable and contains deterministic starting-building overrides identified by canonical `BuildingKey` values.
 
-The Query Layer resolves the effective immutable starting-building set and passes only that set to dependency-graph construction. The planner remains scenario-independent.
+The Query Layer resolves the effective immutable starting-building set once for the Town Planning Request.
 
 An empty `PlanningScenario()` is behaviorally equivalent to canonical planning.
 
-Related plan, cost, order, status, and ledger requests must receive the same immutable scenario to describe the same hypothetical state.
+Persisted scenarios continue to store canonical identifiers, never localized display names.
 
-Clients must use scenario-aware Query Layer results rather than infer effective state from canonical building fields.
+The existing `PlanningScenario` remains a single-town starting-state contract. A future aggregate scenario owns towns and shared economy and must not overload this contract without separate architecture.
 
-Persisted scenarios store canonical identifiers, never localized display names.
+## Typed Validation Failures
 
-## Plan Comparison and Decision Summaries
+Invalid requests raise explicit Query Layer validation errors.
 
-`compare_plans()` generates each side independently through the authoritative planning pipeline and delegates comparison calculations to the comparison module.
+Required conceptual hierarchy:
 
-`compare_accepted_build_plans(...)` consumes accepted immutable plan inputs and does not regenerate them.
+```text
+ObjectivePlanningRequestError
+├── EmptyObjectiveSetError
+├── UnsupportedObjectiveTypeError
+├── UnknownObjectiveTargetError
+├── CrossTownObjectiveError
+├── IncompatibleObjectivesError
+├── InvalidTownStateError
+├── InvalidStartingDateError
+└── IncompatiblePlanningScenarioError
+```
 
-`generate_decision_summary()` delegates planning and comparison, then returns structured facts. Recommendation and presentation remain client responsibilities.
+Exact class names may follow repository conventions, but one documented public
+type must exist for each semantic category.
+
+Exact duplicate objective identities are normalized away and therefore are not
+an error.
+
+`IncompatibleObjectivesError` is reserved for distinct objective values that
+cannot participate in one valid Town Planning Request.
+
+## Typed Infeasibility Outcomes
+
+A structurally valid request that cannot produce a complete plan returns a typed
+immutable infeasibility contract rather than a request-validation exception.
+
+Required conceptual categories:
+
+```text
+ObjectivePlanningFailure
+├── UnsatisfiedPrerequisites
+├── NoLegalIntegratedOrder
+├── ResourceInfeasibility
+└── ObjectiveNotCompletable
+```
+
+Each failure includes:
+
+- canonical failure kind;
+- affected objectives;
+- affected canonical entities where applicable;
+- immutable diagnostics;
+- no localized identity.
+
+Equivalent conditions must not unpredictably alternate between exceptions and
+failure results.
+
+Unexpected invariant violations remain programming defects and are not ordinary
+planner failures.
+
+## Provenance Contract
+
+The result exposes both directions of objective provenance.
+
+Objective-facing:
+
+```text
+ObjectiveDependencySummary
+    objective
+    required_buildings
+    constructed_buildings
+    satisfied_at_start
+```
+
+Build-step-facing:
+
+```text
+BuildStepObjectiveProvenance
+    building
+    required_by
+    objective_targets
+```
+
+`required_by` contains every explicit Objective whose prerequisite closure
+contains the building.
+
+`objective_targets` contains every explicit Objective directly satisfied by
+that building.
+
+Both tuples use canonical Objective Set ordering.
+
+Presenters may format these facts but may not infer them from graph traversal.
+
+## Result Contract
+
+`MultiObjectivePlannerResult` is immutable and includes:
+
+```text
+request
+integrated BuildPlan
+objective completions
+objective-facing dependency summaries
+build-step-facing provenance
+daily construction schedule
+resource timeline or approved immutable resource projection
+diagnostics
+completion state
+```
+
+A result is complete only when every explicit Objective is complete.
+
+The integrated total cost is authoritative and is never calculated by summing
+independent objective plans.
 
 ## Resource Ledgers
 
-`generate_resource_ledger()` is the public entry point for income-aware construction and recruitment accounting.
+Multi-objective resource behavior derives from the one integrated schedule.
 
-The Query Layer resolves one effective starting state and reuses it throughout plan, income, stock, and ledger generation.
+The Query Layer must not generate one ledger per Objective and add them together.
 
-The automatic income model includes certified deterministic town-building income and excludes stochastic or user-unmodeled map income.
-
-Recruitment presentation resolves unit and upgrade names through planner
-display-name operations. Localization does not own recruitment availability,
-quantity, date, or cost.
+Existing resource-ledger APIs remain compatible until separately evolved.
 
 ## Planner Localization Ownership
 
-The Query Layer owns one immutable Planner Localization Catalog for its
-configured language.
+Objective identity remains canonical.
 
-The catalog is constructed eagerly during canonical startup from canonical
-planner-visible entities and explicit planner localization sources.
+Building Objective display uses existing Planner Localization Catalog operations.
 
-The Query Layer must not:
-
-- scan the complete localization directory;
-- expose raw token maps;
-- expose localization file paths;
-- expose source manifests;
-- apply file-order conflict resolution;
-- use localized names as canonical identity.
-
-The existing localization parser remains an internal backend component with
-unchanged duplicate-key semantics.
-
-Changing language constructs a new immutable catalog. It does not mutate the
-current catalog, canonical data, planner state, or scenarios.
+Future Objective variants must define their presentation mapping without storing localized strings in Objective values.
 
 ## Public Contract
 
-Application clients may import supported Query Layer interfaces from `olden_db.query` and documented stable domain contracts from their defining modules.
+Application clients may import supported Query Layer interfaces and documented stable domain contracts.
 
-The Query Layer is the supported application-facing backend entry point.
-
-Internal parser, database, graph, path, planner-algorithm, localization-source,
-and catalog-index implementation details remain private to the backend.
+Graph union, prerequisite traversal, provenance construction, planner algorithms,
+localization storage, and typed failure implementation details remain private.
 
 ## Behavioral Guarantees
 
-- Canonical SIDs and `BuildingKey` values are authoritative identifiers.
-- Query operations are deterministic for identical game data and inputs.
-- Discovery results are immutable and deterministically ordered.
-- Display-name lookups are deterministic for identical data, language, and source policy.
-- Display-name lookups always apply the documented fallback order.
-- Invalid requests raise documented Query Layer exceptions rather than leaking lower-level lookup failures.
-- Canonical initialization is available through `PlanningQueryService.from_default_game_data()`.
-- Existing `generate_build_plan(...)` callers remain compatible.
-- Existing `get_building_display_text(...)` purpose remains compatible.
-- Empty scenarios preserve canonical output.
-- Query Layer behavior is independent of UI event frequency and execution scheduling.
-- Localization configuration does not change planner, comparison, or persistence identity.
+- Objective is a typed union, not an alias for BuildingKey.
+- TownPlanningRequest owns one ObjectiveSet.
+- ObjectiveSet owns normalized immutable Objective membership.
+- Multi-objective planning produces one integrated plan.
+- Shared prerequisites are scheduled and charged once.
+- Reverse build-step provenance is authoritative result data.
+- Validation failures and infeasibility outcomes are typed separately.
+- Existing single-target APIs remain additive compatibility adapters.
+- Query operations are deterministic for identical canonical inputs.
+- Localization does not change objective identity or planning output.
 
 ## Compatibility Policy
 
-Documented Query Layer methods, exceptions, stable domain contracts, and behavioral guarantees are public API.
+Documented existing Query Layer methods remain public API.
 
-Changes to those contracts require explicit architectural review.
+`generate_objective_plan(...)` is additive.
 
-Internal implementation may evolve provided the documented public behavior remains satisfied.
-
-BE-014 may replace the current internal single-file building-localization
-dependency with the Planner Localization Catalog while preserving public call
-shapes and deterministic fallback.
+Single-target methods delegate conceptually to a one-objective request and remain compatible until a separately approved deprecation and migration plan exists.
 
 ## Validation
 
 Validation must cover:
 
-- canonical planning;
-- initialization and discovery;
-- scenario equivalence and overrides;
-- `generate_planner_result(...)`;
-- diagnostics;
-- comparisons and decision summaries;
-- resource ledgers;
-- faction, building, unit, and upgrade display-name lookup;
-- localized success and both fallback levels;
-- invalid canonical identity errors;
-- deterministic repeated catalog construction and lookup;
-- catalog immutability;
-- unchanged existing parser duplicate-key tests;
-- absence of full-directory planner localization scanning;
-- deterministic repeated Query Layer calls;
-- compatibility of `generate_build_plan(...)`;
-- compatibility of `get_building_display_text(...)`;
-- absence of workspace or UI lifecycle state in Query Layer contracts;
-- absence of localization storage in public Query Layer contracts.
+- immutable Objective variants;
+- closed-union exhaustiveness;
+- immutable normalized Objective Sets;
+- exact duplicate normalization;
+- deterministic canonical ordering;
+- typed request-validation errors;
+- typed infeasibility outcomes;
+- cross-town and unknown-target rejection;
+- incompatible-objective rejection;
+- one-objective equivalence with existing APIs;
+- shared-prerequisite deduplication;
+- shared cost and income application once;
+- objective-facing provenance;
+- build-step-facing reverse provenance;
+- deterministic objective completion;
+- integrated total cost and resource timeline;
+- no independent-plan concatenation;
+- unchanged existing single-target call shapes and behavior;
+- Query Layer-only application access;
+- localization independence.
 
 Use repository-provided test modules with:
 
@@ -301,4 +459,3 @@ python -m scripts...
 Canonical startup parses one explicit planner-localization source document and constructs one immutable `PlannerLocalizationCatalog`. The builder enumerates only planner-visible canonical factions, buildings, units, and upgrades from `LoadedGameData`; unrelated interface tokens are not copied into planner indexes.
 
 Public display-name operations are `get_faction_display_name(...)`, `get_building_display_name(...)`, `get_unit_display_name(...)`, and `get_upgrade_display_name(...)`. Existing display-text operations remain compatible and delegate to the catalog.
-
