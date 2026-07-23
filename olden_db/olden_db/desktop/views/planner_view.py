@@ -687,12 +687,6 @@ class PlannerView(ttk.Frame):
             timeline.empty_state_text
             or "Select a construction step to review its completion order."
         )
-        if timeline.steps:
-            first = str(timeline.steps[0].step_number)
-            self._timeline_tree.selection_set(first)
-            self._timeline_tree.focus(first)
-            self._timeline_tree.see(first)
-            self._show_timeline_step_detail(timeline.steps[0])
         self._last_timeline_presentation = timeline
 
     def _handle_timeline_selection(
@@ -734,10 +728,14 @@ class PlannerView(ttk.Frame):
             self._timeline_tree.selection_remove(*self._timeline_tree.selection())
             return
         item_id = self._timeline_item_id(identity)
-        if self._timeline_tree.exists(item_id):
+        if not self._timeline_tree.exists(item_id):
+            return
+        current = self._timeline_tree.selection()
+        if current != (item_id,):
             self._timeline_tree.selection_set(item_id)
+        if self._timeline_tree.focus() != item_id:
             self._timeline_tree.focus(item_id)
-            self._timeline_tree.see(item_id)
+        self._timeline_tree.see(item_id)
 
     def render_explanation(self, presentation: BuildPlanExplanationPresentation) -> None:
         self._explanation_heading_var.set(presentation.heading)

@@ -242,6 +242,8 @@ class PlannerPresenter:
         self._submit_current_selection()
 
     def on_build_step_selected(self, identity: BuildStepIdentity) -> None:
+        if self._selected_build_step == identity:
+            return
         base = self._workspace.base(identity.base_plan_id)
         if base.result_revision != identity.result_revision:
             return
