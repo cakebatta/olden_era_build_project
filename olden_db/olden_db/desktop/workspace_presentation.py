@@ -4,6 +4,10 @@ from dataclasses import dataclass
 
 from olden_db.planning_workspace import PlanningExecutionStatus
 
+from .build_plan_explanation import (
+    BuildPlanExplanationPresentation,
+    EMPTY_BUILD_PLAN_EXPLANATION,
+)
 from .planner_diagnostics import PlannerDiagnosticPresentation
 from .planning_summary import PlanningSummaryPresentation
 from .planning_timeline import BuildPlanTimelinePresentation, EMPTY_BUILD_PLAN_TIMELINE
@@ -23,6 +27,7 @@ class PlanningWorkspacePresentation:
     selection_revision: int
     result_revision: int | None
     timeline: BuildPlanTimelinePresentation = EMPTY_BUILD_PLAN_TIMELINE
+    explanation: BuildPlanExplanationPresentation = EMPTY_BUILD_PLAN_EXPLANATION
 
     @property
     def is_pending(self) -> bool:

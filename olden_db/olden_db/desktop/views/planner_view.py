@@ -8,6 +8,11 @@ from olden_db.models import BuildingKey, BuildingLevel, ResourceCost
 from olden_db.planner import BuildPlan, GameDate
 from olden_db.scenario import PlanningScenario, PrerequisiteStatus
 
+from ..build_plan_explanation import (
+    BuildPlanExplanationPresentation,
+    BuildStepIdentity,
+    ExplanationPanelStatus,
+)
 from ..display_names import CanonicalDisplayOption, StartingBuildingPresentation
 from ..formatting import (
     format_build_plan,
@@ -82,6 +87,8 @@ class PlannerView(ttk.Frame):
         self._on_generate_plan: Callable[[], None] | None = None
         self._on_starting_building_changed: Callable[[BuildingKey, bool], None] | None = None
         self._on_reset_scenario: Callable[[], None] | None = None
+        self._on_build_step_selected: Callable[[BuildStepIdentity], None] | None = None
+        self._on_build_step_selection_cleared: Callable[[], None] | None = None
 
         ttk.Label(self, text="Build Planner", font=("TkDefaultFont", 16, "bold")).grid(
             row=0, column=0, sticky="w"
@@ -284,12 +291,60 @@ class PlannerView(ttk.Frame):
         self._timeline_tree.grid(row=2, column=0, sticky="nsew")
         timeline_scrollbar.grid(row=2, column=1, sticky="ns")
         self._timeline_tree.bind("<<TreeviewSelect>>", self._handle_timeline_selection)
+        self._timeline_tree.bind("<Return>", self._activate_focused_timeline_step)
+        self._timeline_tree.bind("<space>", self._activate_focused_timeline_step)
         ttk.Label(
             timeline,
             textvariable=self._timeline_detail_var,
             justify="left",
             wraplength=500,
         ).grid(row=3, column=0, columnspan=2, sticky="ew", pady=(7, 0))
+
+
+        explanation = ttk.LabelFrame(results, text="Build Step Explanation", padding=(10, 8))
+        explanation.grid(row=2, column=0, columnspan=2, sticky="nsew", pady=(8, 0))
+        explanation.columnconfigure(0, weight=1)
+        explanation.rowconfigure(2, weight=1)
+        self._explanation_heading_var = tk.StringVar(value="Build Step Explanation")
+        self._explanation_message_var = tk.StringVar(
+            value="Select a construction step to review why it appears in the accepted plan."
+        )
+        ttk.Label(
+            explanation,
+            textvariable=self._explanation_heading_var,
+            font=("TkDefaultFont", 11, "bold"),
+            justify="left",
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Label(
+            explanation,
+            textvariable=self._explanation_message_var,
+            justify="left",
+            wraplength=700,
+        ).grid(row=1, column=0, sticky="ew", pady=(3, 6))
+        self._explanation_text = tk.Text(
+            explanation,
+            height=13,
+            wrap="word",
+            state="disabled",
+            takefocus=True,
+            highlightthickness=2,
+            highlightcolor="SystemHighlight",
+        )
+        self._explanation_text.tag_configure(
+            "section",
+            font=("TkDefaultFont", 10, "bold"),
+            spacing1=8,
+            spacing3=3,
+        )
+        explanation_scroll = tk.Scrollbar(
+            explanation,
+            orient="vertical",
+            command=self._explanation_text.yview,
+            width=18,
+        )
+        self._explanation_text.configure(yscrollcommand=explanation_scroll.set)
+        self._explanation_text.grid(row=2, column=0, sticky="nsew")
+        explanation_scroll.grid(row=2, column=1, sticky="ns")
 
         self._results_text = tk.Text(results, state="disabled", height=1)
         self._results_text.tag_configure(
@@ -390,6 +445,8 @@ class PlannerView(ttk.Frame):
         on_generate_plan: Callable[[], None],
         on_starting_building_changed: Callable[[BuildingKey, bool], None],
         on_reset_scenario: Callable[[], None],
+        on_build_step_selected: Callable[[BuildStepIdentity], None],
+        on_build_step_selection_cleared: Callable[[], None],
     ) -> None:
         self._on_faction_changed = on_faction_changed
         self._on_building_changed = on_building_changed
@@ -398,6 +455,8 @@ class PlannerView(ttk.Frame):
         self._on_generate_plan = on_generate_plan
         self._on_starting_building_changed = on_starting_building_changed
         self._on_reset_scenario = on_reset_scenario
+        self._on_build_step_selected = on_build_step_selected
+        self._on_build_step_selection_cleared = on_build_step_selection_cleared
 
     @staticmethod
     def _fit_combobox_to_values(
@@ -589,6 +648,7 @@ class PlannerView(ttk.Frame):
             self._summary_failure_var.set("")
             self._summary_failure_label.grid_remove()
         self._render_timeline(presentation.timeline)
+        self.render_explanation(presentation.explanation)
         self.set_diagnostics(presentation.diagnostics)
         if presentation.is_pending:
             self.update_idletasks()
@@ -611,7 +671,7 @@ class PlannerView(ttk.Frame):
             self._timeline_tree.insert(
                 "",
                 "end",
-                iid=str(step.step_number),
+                iid=self._timeline_item_id(step.identity),
                 values=(
                     step.position_text,
                     step.building_name,
@@ -643,20 +703,60 @@ class PlannerView(ttk.Frame):
         timeline = self._last_timeline_presentation
         if not selection or timeline is None:
             return
-        step_number = int(selection[0])
+        item_id = selection[0]
         step = next(
-            (item for item in timeline.steps if item.step_number == step_number),
+            (
+                item for item in timeline.steps
+                if self._timeline_item_id(item.identity) == item_id
+            ),
             None,
         )
-        if step is not None:
-            self._show_timeline_step_detail(step)
+        if step is not None and self._on_build_step_selected is not None:
+            self._on_build_step_selected(step.identity)
 
-    def _show_timeline_step_detail(self, step) -> None:
-        self._timeline_detail_var.set(
-            f"{step.position_text} — {step.completion_order_text} — "
-            f"{step.building_name} {step.level_text} — "
-            f"builds {step.construction_date_text}."
+    @staticmethod
+    def _timeline_item_id(identity: BuildStepIdentity) -> str:
+        building = identity.building
+        return (
+            f"{identity.base_plan_id.value}|{identity.result_revision}|"
+            f"{identity.step_number}|{building.faction}|{building.sid}|{building.level}"
         )
+
+    def _activate_focused_timeline_step(self, _event: tk.Event[tk.Misc]) -> str:
+        focused = self._timeline_tree.focus()
+        if focused:
+            self._timeline_tree.selection_set(focused)
+            self._handle_timeline_selection()
+        return "break"
+
+    def restore_build_step_focus(self, identity: BuildStepIdentity | None) -> None:
+        if identity is None:
+            self._timeline_tree.selection_remove(*self._timeline_tree.selection())
+            return
+        item_id = self._timeline_item_id(identity)
+        if self._timeline_tree.exists(item_id):
+            self._timeline_tree.selection_set(item_id)
+            self._timeline_tree.focus(item_id)
+            self._timeline_tree.see(item_id)
+
+    def render_explanation(self, presentation: BuildPlanExplanationPresentation) -> None:
+        self._explanation_heading_var.set(presentation.heading)
+        message = presentation.message or (
+            "Current accepted result."
+            if presentation.status is ExplanationPanelStatus.READY
+            else ""
+        )
+        self._explanation_message_var.set(message)
+        self._explanation_text.configure(state="normal")
+        self._explanation_text.delete("1.0", "end")
+        for section in presentation.sections:
+            self._explanation_text.insert("end", section.heading + "\n", "section")
+            for line in section.lines:
+                self._explanation_text.insert("end", line + "\n")
+        if not presentation.sections and presentation.message:
+            self._explanation_text.insert("end", presentation.message)
+        self._explanation_text.configure(state="disabled")
+        self._explanation_text.see("1.0")
 
     def set_diagnostics(
         self,

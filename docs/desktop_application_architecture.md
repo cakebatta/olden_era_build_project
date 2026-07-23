@@ -565,3 +565,6 @@ Desktop validation must confirm:
 - changing localization configuration does not alter planner output;
 - complete planner startup does not parse unrelated interface resources.
 
+## UI-012 Interactive Build Plan Explanation
+
+The presenter owns semantic BuildStepIdentity selection and accepted-result revision reconciliation. The passive view renders immutable explanation sections and forwards semantic timeline intent. Remaining before/after values are labeled as integrated construction requirements, not inventory.

@@ -4,6 +4,13 @@ from collections.abc import Callable
 from typing import Protocol
 
 from olden_db.models import BuildingKey, BuildingLevel
+from olden_db.objective_planning import (
+    BuildingCompletionObjective,
+    ObjectivePlanningFailure,
+    ObjectiveSet,
+    TownPlanningRequest,
+    TownState,
+)
 from olden_db.planner import GameDate
 from olden_db.planning_execution import PlanningExecutionCoordinator
 from olden_db.planning_workspace import (
@@ -22,6 +29,12 @@ from olden_db.scenario import (
     StartingBuildingOverride,
 )
 
+from ..build_plan_explanation import (
+    BuildPlanExplanationPresentation,
+    BuildStepIdentity,
+    ExplanationPanelStatus,
+    ExplanationSectionPresentation,
+)
 from ..display_names import CanonicalDisplayOption, StartingBuildingPresentation
 from ..formatting import (
     format_diagnostic_summary,
@@ -69,6 +82,7 @@ class PlannerViewContract(Protocol):
         self,
         presentation: PlanningWorkspacePresentation,
     ) -> None: ...
+    def restore_build_step_focus(self, identity: BuildStepIdentity | None) -> None: ...
 
 
 class PlannerPresenter:
@@ -96,6 +110,8 @@ class PlannerPresenter:
         ) = None
         self._display_text_cache: dict[BuildingKey, str] = {}
         self._faction_text_cache: dict[str, str] = {}
+        self._selected_build_step: BuildStepIdentity | None = None
+        self._objective_view_cache: dict[tuple[object, int], object] = {}
 
     def initialize(self) -> None:
         self._view.set_event_handlers(
@@ -106,6 +122,8 @@ class PlannerPresenter:
             on_generate_plan=self.on_generate_plan,
             on_starting_building_changed=self.on_starting_building_changed,
             on_reset_scenario=self.on_reset_scenario,
+            on_build_step_selected=self.on_build_step_selected,
+            on_build_step_selection_cleared=self.on_build_step_selection_cleared,
         )
         factions = self._service.list_factions()
         self._view.set_factions(self._faction_options(factions))
@@ -222,6 +240,27 @@ class PlannerPresenter:
         self._view.set_planning_mode(0)
         self._on_context_changed()
         self._submit_current_selection()
+
+    def on_build_step_selected(self, identity: BuildStepIdentity) -> None:
+        base = self._workspace.base(identity.base_plan_id)
+        if base.result_revision != identity.result_revision:
+            return
+        explanation_view = self._objective_view_for(base)
+        if explanation_view is None:
+            return
+        if not any(
+            step.step_number == identity.step_number
+            and step.building == identity.building
+            for step in explanation_view.build_steps
+        ):
+            return
+        self._selected_build_step = identity
+        self._render_snapshot(self._workspace.snapshot())
+        self._view.restore_build_step_focus(identity)
+
+    def on_build_step_selection_cleared(self) -> None:
+        self._selected_build_step = None
+        self._render_snapshot(self._workspace.snapshot())
 
     def on_generate_plan(self) -> None:
         """Compatibility callback for the hidden legacy action."""
@@ -404,6 +443,7 @@ class PlannerPresenter:
             selection_revision=base.selection_revision,
             result_revision=base.result_revision,
             timeline=self._build_timeline(base=base, result=result),
+            explanation=self._build_explanation(base),
         )
         if base.result_is_current and result is not None:
             self._state.store_workspace_result(result.plan)
@@ -412,6 +452,7 @@ class PlannerPresenter:
         if presentation != self._last_workspace_presentation:
             self._view.render_workspace(presentation)
             self._last_workspace_presentation = presentation
+        self._view.restore_build_step_focus(presentation.explanation.selected_step)
         if base.execution_status is PlanningExecutionStatus.READY:
             self._set_status(f"Planning revision {base.selection_revision} completed.")
         elif base.execution_status is PlanningExecutionStatus.FAILED:
@@ -419,6 +460,144 @@ class PlannerPresenter:
                 "Current planning request failed"
                 + (f": {failure_message}" if failure_message else ".")
             )
+
+    def _objective_view_for(self, base):
+        if base.accepted_result is None or base.result_revision is None or base.selection is None:
+            return None
+        cache_key = (base.base_id, base.result_revision)
+        cached = self._objective_view_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        selection = base.selection
+        request = TownPlanningRequest(
+            TownState(
+                faction=selection.faction,
+                starting_date=selection.starting_date,
+                planning_scenario=selection.scenario,
+            ),
+            ObjectiveSet((BuildingCompletionObjective(selection.target),)),
+        )
+        outcome = self._service.generate_objective_plan_view(request)
+        if isinstance(outcome, ObjectivePlanningFailure):
+            return None
+        self._objective_view_cache[cache_key] = outcome
+        return outcome
+
+    def _reconcile_build_step_selection(self, base, explanation_view):
+        selected = self._selected_build_step
+        if selected is None:
+            return None
+        if selected.result_revision == base.result_revision:
+            return selected
+        matches = tuple(
+            step for step in explanation_view.build_steps
+            if step.building == selected.building
+        )
+        if len(matches) != 1:
+            self._selected_build_step = None
+            return None
+        step = matches[0]
+        rebound = BuildStepIdentity(
+            base_plan_id=base.base_id,
+            result_revision=base.result_revision,
+            step_number=step.step_number,
+            building=step.building,
+        )
+        self._selected_build_step = rebound
+        return rebound
+
+    def _build_explanation(self, base) -> BuildPlanExplanationPresentation:
+        explanation_view = self._objective_view_for(base)
+        if explanation_view is None or base.result_revision is None:
+            self._selected_build_step = None
+            return BuildPlanExplanationPresentation(
+                base_plan_id=base.base_id,
+                result_revision=base.result_revision,
+                status=ExplanationPanelStatus.EMPTY,
+                selected_step=None,
+                heading="Build Step Explanation",
+                sections=(),
+                is_current_result=False,
+                message="Select a construction step after a plan is accepted.",
+            )
+        selected = self._reconcile_build_step_selection(base, explanation_view)
+        if selected is None:
+            return BuildPlanExplanationPresentation(
+                base_plan_id=base.base_id,
+                result_revision=base.result_revision,
+                status=ExplanationPanelStatus.EMPTY,
+                selected_step=None,
+                heading="Build Step Explanation",
+                sections=(),
+                is_current_result=base.result_is_current,
+                message="Select a construction step to review why it appears in the accepted plan.",
+            )
+        step = next(
+            (
+                item for item in explanation_view.build_steps
+                if item.step_number == selected.step_number
+                and item.building == selected.building
+            ),
+            None,
+        )
+        if step is None:
+            self._selected_build_step = None
+            return BuildPlanExplanationPresentation(
+                base_plan_id=base.base_id,
+                result_revision=base.result_revision,
+                status=ExplanationPanelStatus.EMPTY,
+                selected_step=None,
+                heading="Build Step Explanation",
+                sections=(),
+                is_current_result=base.result_is_current,
+                message="The previously selected step is not present in the current plan.",
+            )
+        prerequisites = tuple(self._display_text(item) for item in step.prerequisite_buildings)
+        supported = tuple(item.display_name for item in step.required_by_objectives)
+        completed = tuple(item.display_name for item in step.objective_targets)
+        downstream = tuple(self._display_text(item) for item in step.downstream_buildings_enabled)
+        sections = (
+            ExplanationSectionPresentation(
+                "Build Information",
+                (
+                    f"Building: {step.display_name}",
+                    f"Construction day: {format_game_date(step.construction_day)}",
+                    f"Construction cost: {format_resource_cost(step.resource_cost)}",
+                ),
+            ),
+            ExplanationSectionPresentation(
+                "Construction Requirements",
+                (
+                    "Prerequisite buildings: " + (", ".join(prerequisites) if prerequisites else "None"),
+                    "Remaining construction requirement before: " + format_resource_cost(step.resource_balance_before),
+                    "Remaining construction requirement after: " + format_resource_cost(step.resource_balance_after),
+                ),
+            ),
+            ExplanationSectionPresentation("Supported Objectives", supported or ("None",)),
+            ExplanationSectionPresentation("Objectives Completed", completed or ("None",)),
+            ExplanationSectionPresentation("Buildings Enabled", downstream or ("None",)),
+            ExplanationSectionPresentation(
+                "Economic Effects",
+                ("Income change: " + format_resource_cost(step.income_change),),
+            ),
+        )
+        retained = base.retains_previous_result
+        return BuildPlanExplanationPresentation(
+            base_plan_id=base.base_id,
+            result_revision=base.result_revision,
+            status=(
+                ExplanationPanelStatus.RETAINED_PREVIOUS_RESULT
+                if retained else ExplanationPanelStatus.READY
+            ),
+            selected_step=selected,
+            heading=step.display_name,
+            sections=sections,
+            is_current_result=base.result_is_current,
+            message=(
+                "This explanation belongs to the Previous Accepted Plan."
+                if retained else None
+            ),
+        )
 
     def _diagnostics_for(self, base):
         result = base.accepted_result
@@ -576,6 +755,12 @@ class PlannerPresenter:
         total_steps = len(result.plan.steps)
         steps = tuple(
             TimelineStepPresentation(
+                identity=BuildStepIdentity(
+                    base_plan_id=base.base_id,
+                    result_revision=base.result_revision,
+                    step_number=step.step_number,
+                    building=step.building,
+                ),
                 step_number=step.step_number,
                 position_text=f"Step {step.step_number} of {total_steps}",
                 building_name=self._display_text(step.building),

@@ -333,3 +333,7 @@ Implementation must validate:
 - Current and retained explanations must remain visibly distinct.
 - Canonical result revision must accompany explanation selection.
 - BE-016 remaining-construction fields require careful labeling to avoid inventory misrepresentation.
+
+## UI-012 Interactive Build Plan Explanation
+
+The presenter owns semantic BuildStepIdentity selection and accepted-result revision reconciliation. The passive view renders immutable explanation sections and forwards semantic timeline intent. Remaining before/after values are labeled as integrated construction requirements, not inventory.

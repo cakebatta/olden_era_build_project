@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .build_plan_explanation import BuildStepIdentity
+
 
 @dataclass(frozen=True, slots=True)
 class TimelineStepPresentation:
+    identity: BuildStepIdentity
     step_number: int
     position_text: str
     building_name: str
